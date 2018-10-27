@@ -1,8 +1,8 @@
 import telebot
-import secret
+import bot_token
 from config import *
 
-bot = telebot.TeleBot(secret.token)
+bot = telebot.TeleBot(bot_token.token)
 
 
 @bot.message_handler(commands=['start'])

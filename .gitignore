@@ -105,4 +105,4 @@ venv.bak/
 
 .idea/
 *~
-secret.py
+bot_token.py
