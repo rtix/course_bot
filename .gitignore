@@ -105,4 +105,4 @@ venv.bak/
 
 .idea/
 *~
-token.py
+config.py
