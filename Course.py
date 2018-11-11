@@ -59,7 +59,7 @@ class Course():
 			self.__course_id = int(course_id)
 			data_from_base = dict(CourseDB.get_course(self.__course_id))
 			self.__course_name = str(data_from_base["course_name"])
-			self.__owner_id = str(data_from_base["owner_id"])
+			self.__owner_id = int(data_from_base["owner_id"])
 			self.__description = str(data_from_base["description"])
 		else:
 			self.__owner_id = int(owner_id)
@@ -79,7 +79,7 @@ class Course():
 		return self.__description
 	@property
 	def participants(self):
-		return list(CourseDB.get_course_participants(self.__id))
+		return list(CourseDB.get_course_participants(self.__course_id))
 	@description.setter
 	def description(self, description):
 		self.__description = description
