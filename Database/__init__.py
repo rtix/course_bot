@@ -1,8 +1,7 @@
 from Database.CourseDB import *
 from Database.UserDB import *
 import sqlite3
-# Create users database, if it's not exists yet
-con = sqlite3.connect("DB_FRO_TBOT.db")
+con = sqlite3.connect('./Database/DB_FOR_TBOT.db')
 con.cursor().execute("""Create table if not exists User(
                 username text,
                 name text,
