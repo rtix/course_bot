@@ -19,6 +19,7 @@ con.cursor().execute("""Create table if not exists Course(
                 owner integer not null,
                 description text,
                 id integer not null primary key AUTOINCREMENT,
+                enry_restriction text,
                 foreign key(owner) references User(u_id) on delete cascade)""")
 con.commit()
 con.cursor().execute("""Create table if not exists User_code(
@@ -48,9 +49,9 @@ con.cursor().execute("""Create table if not exists Marks(
                 user_id integer not null,
                 course_id integer not null,
                 date text,
-                primary key(task_num,user_id,course_id),
+                primary key(task_id,user_id,course_id),
                 foreign key(course_id) references Course(id) on delete cascade,
-                foreign key(task_num) references Tasks(number) on delete cascade,
+                foreign key(task_id) references Tasks(number) on delete cascade,
                 foreign key(user_id) references User(u_id) on delete cascade)""")
 con.commit()
 con.cursor().execute("""Create table if not exists Classworks(
@@ -69,5 +70,22 @@ con.cursor().execute("""Create table if not exists Attendance(
                     foreign key(course_id) references Course(id) on delete cascade,
                     foreign key(cw_id) references Classworks(classwork_id) on delete cascade,
                     foreign key(user_id) references User(u_id) on delete cascade)""")
+con.commit()
+con.cursor().execute("""Create table if not exists Blacklist(
+                    course_id integer not null,
+                    user_id integer not null,
+                    primary key(course_id,user_id),
+                    foreign key(course_id) references Course(id) on delete cascade,
+                    foreign key(user_id) references User(u_id) on delete cascade)""")
+con.commit()
+con.cursor().execute("""Create table if not exists Literature(
+                    course_id integer not null,
+                    lit_id integer not null primary key autoincrement,
+                    name text unique,
+                    description text,
+                    file_id integer,
+                    url text,
+                    foreign key(course_id) references Course(id) on delete cascade)
+                    """)
 con.commit()
 con.close()

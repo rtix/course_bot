@@ -26,7 +26,55 @@ def get_course(course_id):
     cur.execute("""Select * from Course
                 where id=?""",[course_id])
     res = cur.fetchall()[0]
-    d = {'name': res[0], 'owner': res[1], 'description': res[2], 'id': res[3]}
+    cur.execute("""Select id_user from User_course
+                where id_course=?""",[course_id])
+    res1=cur.fetchall()
+    if res1:
+        a = []
+        for i in res1:
+            a.append(i[0])
+    else:
+        a=[]
+    cur.execute("""Select user_id from Blacklist 
+                where course_id=?""",[course_id])
+    res2=cur.fetchall()
+    if res2:
+        b = []
+        for i in res2:
+            b.append(i[0])
+    else:
+        b=[]
+    cur.execute("""Select task_id from Tasks
+                where course_id=?""",[course_id])
+    res3=cur.fetchall()
+    if res3:
+        c = []
+        for i in res3:
+            c.append(i[0])
+    else:
+        c=[]
+    cur.execute("""Select classwork_id from Classworks
+                where course_id=?""",[course_id])
+    res4=cur.fetchall()
+    if res4:
+        e = []
+        for i in res4:
+            e.append(i[0])
+    else:
+        e=[]
+    cur.execute("""Select lit_id from Literature 
+                where course_id=?""",[course_id])
+    res5=cur.fetchall()
+    if res5:
+        f = []
+        for i in res5:
+            f.append(i[0])
+    else:
+        f=[]
+    con.close()
+    d = {'name': res[0], 'owner': res[1], 'description': res[2], 'id': res[3],
+         'entry_restriction':res[4], 'participants': a, 'blacklist': b,
+         'task_numbers': c, 'cw_numbers': e, 'lit_numbers': f}
     con.close()
     return d
 def get_course_participants(course_id):
@@ -48,7 +96,7 @@ def create_task(course_id,task_name,task_descr,task_highest_mark):
     cur.execute("""Insert into Tasks(course_id,description,max_ball,name) values(?,?,?,?)"""
                 ,[course_id,task_descr,task_highest_mark,task_name])
     con.commit()
-    cur.execute("""Select number from Tasks
+    cur.execute("""Select task_id from Tasks
                 where course_id=? and name=?""",[course_id,task_name])
     c=cur.fetchall()[0][0]
     con.close()
@@ -62,12 +110,12 @@ def get_task(course_id,task_id):
     d={'course_id':res[0],'description':res[1],'max_ball':res[2],'name':res[3],'task_id':res[4],'deadline':res[5]}
     con.close()
     return d
-def set_course(course_id,field, value):
+def set_course(course_id,field,value):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur=con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
-    cur.execute("""Update Course
+    cur.execute("""Update Course 
                 Set {}=?
                 where id=?""".format(field),[value,course_id])
     con.commit()
@@ -238,3 +286,91 @@ def delete_attendance(course_id,cw_id,user_id):
     con.commit()
     con.close()
     return 1
+def append_to_blacklist(course_id,user_id):
+    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    cur = con.cursor()
+    cur.execute("Pragma foreign_keys = ON")
+    con.commit()
+    cur.execute("""Insert into Blacklist values (?,?)""",[course_id,user_id])
+    con.commit()
+    con.close()
+    return 1
+def remove_from_blacklist(course_id,user_id):
+    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    cur = con.cursor()
+    cur.execute("Pragma foreign_keys = ON")
+    con.commit()
+    cur.execute("""Delete from Blacklist
+                where course_id=? and user_id=?""",[course_id,user_id])
+    con.commit()
+    con.close()
+    return 1
+def append_user_course(stud_id,course_id):
+    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    cur=con.cursor()
+    cur.execute("Pragma foreign_keys = ON")
+    con.commit()
+    cur.execute("""Insert into User_Course(id_user,id_course) values (?,?)""",[stud_id,course_id])
+    con.commit()
+    con.close()
+    return stud_id
+def remove_user_course(stud_id,course_id):
+    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    cur = con.cursor()
+    cur.execute("Pragma foreign_keys = ON")
+    con.commit()
+    cur.execute("""Delete from User_course
+                where id_user=? and id_course=?""",[stud_id,course_id])
+    con.commit()
+    con.close()
+    return stud_id
+def create_literature(course_id,name, description, file_id, url):
+    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    cur = con.cursor()
+    cur.execute("Pragma foreign_keys = ON")
+    con.commit()
+    cur.execute("""Insert into Literature(course_id,name,description,file_id,url)
+                values(?,?,?,?,?)""",[course_id,name,description,file_id,url])
+    con.commit()
+    cur.execute("""Select lit_id from Literature
+                where course_id = ? and name= ?""",[course_id,name])
+    d=cur.fetchone()[0]
+    con.close()
+    return d
+def get_literature(course_id,lit_id):
+    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    cur = con.cursor()
+    cur.execute("Pragma foreign_keys = ON")
+    con.commit()
+    cur.execute("""Select file_id from Literature
+                where course_id=? and lit_id=?""",[course_id,lit_id])
+    d=cur.fetchone()
+    if d:
+        con.close()
+        d=d[0]
+        return d
+    else:
+        con.close()
+        return 0
+def set_literature(course_id, lit_id,field,value):
+    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    cur = con.cursor()
+    cur.execute("Pragma foreign_keys = ON")
+    con.commit()
+    cur.execute("""Update Literature
+                Set {}=?
+                where course_id=? and lit_id=?""".format(field),[value,course_id,lit_id])
+    con.commit()
+    con.close()
+    return 1
+def delete_literature(course_id, lit_id):
+    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    cur = con.cursor()
+    cur.execute("""Delete from Literature
+                where course_id=? and lit_id=?""",[course_id,lit_id])
+    con.commit()
+    con.close()
+    return lit_id
+
+
+
