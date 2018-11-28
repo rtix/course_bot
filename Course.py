@@ -10,24 +10,24 @@ class InterrelatedParametersError(Exception):
 		return "Expected interrelated parameters: {}. You have to use only one data set from this".format(" OR ".join([str(msg) for msg in self.message]))
 
 class Literature():
-	def __init__(self, course_id, number=None, name="", description="", file=None, url=""):
+	def __init__(self, course_id, number=None, name="", description="", file_id=None, url=""):
 		# Checking if constructor parameters was used correctry
-		if not((number and not(name or description or file or url)) or (not number and name)):
-			raise InterrelatedParametersError(("course_id", "number"), ("course_id", "name", "optional: description", "optional: file", "optional: url"))
+		if not((number and not(name or description or file_id or url)) or (not number and name)):
+			raise InterrelatedParametersError(("course_id", "number"), ("course_id", "name", "optional: description", "optional: file_id", "optional: url"))
 		self.__course_id = course_id
 		if number:
 			self.__lit_number = number
 			data_from_base = CourseDB.get_literature(self.__course_id, self.__lit_number)
 			self.__name = data_from_base["name"]
 			self.__description = data_from_base["description"]
-			self.__file = data_from_base["file"]
+			self.__file_id = data_from_base["file_id"]
 			self.__url = data_from_base["url"]
 		else:
 			self.__name = name
 			self.__description = description
-			self.__file = file
+			self.__file_id = file_id
 			self.__url = url
-			self.__lit_number = CourseDB.create_literature(self.__course_id, self.__name, self.__description, self.__file, self.__url)
+			self.__lit_number = CourseDB.create_literature(self.__course_id, self.__name, self.__description, self.__file_id, self.__url)
 	@property
 	def course_id(self):
 		return self.__course_id
@@ -49,12 +49,12 @@ class Literature():
 		self.__description = description
 		CourseDB.set_literature(self.__course_id, self.__lit_number, 'description', self.__description)
 	@property
-	def file(self):
-		return self.__file
-	@file.setter
-	def file(self, file):
-		self.__file = file
-		CourseDB.set_literature(self.__course_id, self.__lit_number, 'file', self.__file)
+	def file_id(self):
+		return self.__file_id
+	@file_id.setter
+	def file_id(self, file_id):
+		self.__file_id = file_id
+		CourseDB.set_literature(self.__course_id, self.__lit_number, 'file_id', self.__file_id)
 	@property
 	def url(self):
 		return self.__url
@@ -64,7 +64,7 @@ class Literature():
 		CourseDB.set_literature(self.__course_id, self.__lit_number, 'url', self.__url)
 	def delete(self):
 		CourseDB.delete_literature(self.__course_id, self.__lit_number)
-		del self.__course_id, self.__lit_number, self.__name, self.__description, self.__file, self.__url
+		del self.__course_id, self.__lit_number, self.__name, self.__description, self.__file_id, self.__url
 
 class Attendance():
 	def __init__(self, course_id, cw_number, user_id):
@@ -132,8 +132,8 @@ class Classwork():
 	def date(self, date):
 		self.__cw_date = date
 		CourseDB.set_classwork(self.__course_id, self.__cw_number, 'date', self.__cw_date)
-	def attendance(self):
-		return Attendance(self.__course_id, self.__cw_number)
+	def attendance(self, user_id):
+		return Attendance(self.__course_id, self.__cw_number, user_id)
 	def delete(self):
 		CourseDB.delete_classwork(self.__course_id, self.__cw_number)
 		del self.__course_id, self.__cw_number, self.__cw_name, self.__cw_date
@@ -190,7 +190,7 @@ class Task():
 		if number:
 			self.__task_number = number
 			data_from_base = CourseDB.get_task(self.__course_id, self.__task_number)
-			self.__task_name = data_from_base["task_name"]
+			self.__task_name = data_from_base["name"]
 			self.__task_description = data_from_base["description"]
 			self.__task_highest_mark = data_from_base["highest_mark"]
 			self.__deadline = data_from_base["deadline"]
@@ -198,8 +198,8 @@ class Task():
 			self.__task_name = name
 			self.__task_description = description
 			self.__task_highest_mark = highest_mark
-			self.__task_number = CourseDB.create_task(self.__course_id, self.__task_name, self.__task_description, self.__task_highest_mark)
 			self.__deadline = None
+			self.__task_number = CourseDB.create_task(self.__course_id, self.__task_name, self.__task_description, self.__task_highest_mark, self.__deadline)
 	@property
 	def course_id(self):
 		return self.__course_id
@@ -318,6 +318,8 @@ class Course():
 	def append_to_blacklist(self, user_id):
 		self.__blacklist.append(user_id)
 		CourseDB.append_to_blacklist(self.__course_id, user_id)
+		self.__participants.remove(user_id)
+		CourseDB.remove_user_course(user_id, self.__course_id)
 	def remove_from_blacklist(self, user_id):
 		self.__blacklist.remove(user_id)
 		CourseDB.remove_from_blacklist(self.__course_id, user_id)
@@ -325,8 +327,8 @@ class Course():
 		return Task(self.__course_id, task_number, task_name, task_description, task_highest_mark)
 	def classwork(self, cw_number=None, cw_name="", cw_date=None):
 		return Classwork(self.__course_id, cw_number, cw_name, cw_date)
-	def literature(self, lit_number=None, name="", description="", file=None, url=""):
-		return Literature(self.__course_id, lit_number, name, description, file, url)
+	def literature(self, lit_number=None, name="", description="", file_id=None, url=""):
+		return Literature(self.__course_id, lit_number, name, description, file_id, url)
 	def mailing(self, email, password, text):
 		participants = [User.User(user_id) for user_id in self.__participants]
 		recipients = [participant.email for participant in participants]

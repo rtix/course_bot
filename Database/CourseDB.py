@@ -5,12 +5,15 @@ def create_course(owner_id,course_name):
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
-    cur.execute("Insert into Course(name,owner) values(?,?)",[course_name,owner_id])
+    cur.execute("""Select Max(id)
+                    from Course""")
+    c = cur.fetchone()[0]
+    if c is None:
+        c = 1
+    else:
+        c = c + 1
+    cur.execute("Insert into Course(name,owner,id) values(?,?,?)",[course_name,owner_id,c])
     con.commit()
-    cur.execute("""Select id from Course
-                    where owner=? and name = ?""",[owner_id,course_name])
-    c=cur.fetchall()
-    con.close()
     return c
 def create_user_course(id_user,id_course):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
@@ -88,18 +91,22 @@ def get_course_participants(course_id):
         c.append(i[0])
     con.close()
     return c
-def create_task(course_id,task_name,task_descr,task_highest_mark):
+def create_task(course_id,task_name,task_descr,task_highest_mark,deadline):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur=con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
-    cur.execute("""Insert into Tasks(course_id,description,max_ball,name) values(?,?,?,?)"""
-                ,[course_id,task_descr,task_highest_mark,task_name])
+    cur.execute("""Select Max(task_id)
+                    from Tasks""")
+    c = cur.fetchone()[0]
+    if c is None:
+        c = 1
+    else:
+        c = c + 1
+    cur.execute("""Insert into Tasks(course_id,description,highest_mark,name,deadline)
+                values(?,?,?,?,?)"""
+                ,[course_id,task_descr,task_highest_mark,task_name,deadline])
     con.commit()
-    cur.execute("""Select task_id from Tasks
-                where course_id=? and name=?""",[course_id,task_name])
-    c=cur.fetchall()[0][0]
-    con.close()
     return c
 def get_task(course_id,task_id):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
@@ -107,7 +114,7 @@ def get_task(course_id,task_id):
     cur.execute("""Select* from Tasks
                 where course_id=? and task_id =?""",[course_id,task_id])
     res=cur.fetchall()[0]
-    d={'course_id':res[0],'description':res[1],'max_ball':res[2],'name':res[3],'task_id':res[4],'deadline':res[5]}
+    d={'course_id':res[0],'description':res[1],'highest_mark':res[2],'name':res[3],'task_id':res[4],'deadline':res[5]}
     con.close()
     return d
 def set_course(course_id,field,value):
@@ -198,13 +205,18 @@ def create_classwork(course_id,cw_name,cw_date):
     cur=con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
-    cur.execute("""Insert into Classworks(course_id,name,date) values(?,?,?)""",[course_id,cw_name,cw_date])
+    cur.execute("""Select Max(classwork_id)
+                from Classworks""")
+    c=cur.fetchone()[0]
+    if c is None:
+        c=1
+    else:
+        c=c+1
+    cur.execute("""Insert into Classworks(course_id,name,date) values(?,?,?)""",
+                [course_id,cw_name,cw_date])
     con.commit()
-    cur.execute("""Select classwork_id from Classworks
-                where course_id= ? and name= ? and date =?""",[course_id,cw_name,cw_date])
-    c=cur.fetchall()
     con.close()
-    return c[0][0]
+    return c
 def set_classwork(course_id,cw_id,field,value):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -225,7 +237,7 @@ def delete_classwork(course_id,cw_id):
                 where course_id=? and classwork_id=?""",[course_id,cw_id])
     con.commit()
     con.close()
-    return cw_number
+    return cw_id
 def get_classwork(course_id,cw_id):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -256,7 +268,7 @@ def get_attendance(course_id,cw_id,user_id):
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
     cur.execute("""Select * from Attendance
-                where course_id=? and cw_number=? and user_id=?""",[course_id,cw_id,user_id])
+                where course_id=? and cw_id=? and user_id=?""",[course_id,cw_id,user_id])
     c=cur.fetchall()
     con.close()
     if c:
@@ -272,7 +284,7 @@ def set_attendance(course_id,cw_id,user_id,field,value):
     con.commit()
     cur.execute("""Update Attendance
                 Set {}=?
-                where course_id=? and cw_number=? and user_id=?""".format(field),[value,course_id,cw_id,user_id])
+                where course_id=? and cw_id=? and user_id=?""".format(field),[value,course_id,cw_id,user_id])
     con.commit()
     con.close()
     return 1
@@ -282,7 +294,7 @@ def delete_attendance(course_id,cw_id,user_id):
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
     cur.execute("""Delete from Attendance
-                where course_id=? and user_id=? and cw_number=?""",[course_id,user_id,cw_id])
+                where course_id=? and user_id=? and cw_id=?""",[course_id,user_id,cw_id])
     con.commit()
     con.close()
     return 1
@@ -327,12 +339,10 @@ def remove_user_course(stud_id,course_id):
 def create_literature(course_id,name, description, file_id, url):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
-    cur.execute("Pragma foreign_keys = ON")
-    con.commit()
     cur.execute("""Insert into Literature(course_id,name,description,file_id,url)
                 values(?,?,?,?,?)""",[course_id,name,description,file_id,url])
     con.commit()
-    cur.execute("""Select lit_id from Literature
+    cur.execute("""Select Max(lit_id) from Literature
                 where course_id = ? and name= ?""",[course_id,name])
     d=cur.fetchone()[0]
     con.close()

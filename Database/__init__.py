@@ -18,8 +18,8 @@ con.cursor().execute("""Create table if not exists Course(
                 name text not null,
                 owner integer not null,
                 description text,
-                id integer not null primary key AUTOINCREMENT,
-                enry_restriction text,
+                id integer not null primary key autoincrement,
+                entry_restriction text,
                 foreign key(owner) references User(u_id) on delete cascade)""")
 con.commit()
 con.cursor().execute("""Create table if not exists User_code(
@@ -36,9 +36,9 @@ con.cursor().execute("""Create table if not exists User_course(
 con.commit()
 con.cursor().execute("""Create table if not exists Tasks(
                 course_id integer not null,
-                description text,
-                max_ball float,
-                name text,
+                description text not null,
+                highest_mark float not null,
+                name text not null,
                 task_id integer not null primary key autoincrement,
                 deadline text,
                 foreign key(course_id) references Course(id) on delete cascade)""")
@@ -56,8 +56,8 @@ con.cursor().execute("""Create table if not exists Marks(
 con.commit()
 con.cursor().execute("""Create table if not exists Classworks(
                      course_id integer not null,
-                     classwork_id integer not NULL primary key autoincrement,
-                     name text,
+                     classwork_id integer not NULL primary key Autoincrement,
+                     name text not null,
                      date text,
                      foreign key(course_id) references Course(id) on delete cascade)""")
 con.commit()
@@ -81,7 +81,7 @@ con.commit()
 con.cursor().execute("""Create table if not exists Literature(
                     course_id integer not null,
                     lit_id integer not null primary key autoincrement,
-                    name text unique,
+                    name text not null,
                     description text,
                     file_id integer,
                     url text,
