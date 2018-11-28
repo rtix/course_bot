@@ -1,7 +1,8 @@
 """Кнопки преподователей"""
-from json import dumps
-from telebot.types import InlineKeyboardButton
 
+from json import dumps
+
+from telebot.types import InlineKeyboardButton
 
 # выводит управляемые курсы
 manage_list = InlineKeyboardButton(

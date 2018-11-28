@@ -1,10 +1,13 @@
 """Общие кнопки, которые есть у всех юзеров"""
+
 from json import dumps
-from telebot.types import InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
-keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
-keyboard.add(KeyboardButton(text='Меню'))
+from telebot.types import InlineKeyboardButton
 
+registration = InlineKeyboardButton(
+    'Зарегистрироваться',
+    callback_data=dumps(dict(type='reg'))
+    )
 
 # выводит все курсы
 all_courses = InlineKeyboardButton(
@@ -19,8 +22,17 @@ my_courses = InlineKeyboardButton(
     )
 
 
-# возвращает список кнопок курсов по списку id айдишников курсов
 def course(id, prev='NONE', back_page=0):
+    """
+    Берет на вход список 'id' и создает список кнопок с айди курса.
+
+    :param id: list of int. Список айди курсов.
+    :param prev: str. Меню в которое произойдет при нажатии кнопки "Назад".
+    :param back_page: int. Страница для возврата. Чтобы, если зашел на курс из страницы 3,
+                        на ту же страницу и возвратился.
+    :return: list of InlineKeyboardButton. Возвращает список кнопок с айди курсов.
+    """
+
     arr = []
     for i in id:
         # тут надо будеть делать запрос
@@ -38,7 +50,6 @@ enroll = InlineKeyboardButton(
     'Записаться',
     callback_data=dumps(dict(type='a_course', command='enroll'))
     )
-
 
 leave = InlineKeyboardButton(
     'Отписаться',
@@ -60,7 +71,7 @@ def back(to, back_page=0):
 def forward(page, cmd):
     button = InlineKeyboardButton(
         '>',
-        callback_data=dumps(dict(type='menu', command=cmd, page=page+1))
+        callback_data=dumps(dict(type='menu', command=cmd, page=page + 1))
         )
 
     return button
@@ -69,7 +80,7 @@ def forward(page, cmd):
 def backward(page, cmd):
     button = InlineKeyboardButton(
         '<',
-        callback_data=dumps(dict(type='menu', command=cmd, page=page-1))
+        callback_data=dumps(dict(type='menu', command=cmd, page=page - 1))
         )
 
     return button

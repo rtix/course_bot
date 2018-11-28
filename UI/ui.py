@@ -1,30 +1,62 @@
+import os
+
 from telebot import types
 
-# кол-во записей на странице
-inpage = 5
+# путь к сообщениям
+mespath = 'UI' + os.sep + 'messages' + os.sep
 
 
 class Paging:
-    def __init__(self, id):
-        self.arr = id
-        self.last_page = (len(id) // inpage)
+    def __init__(self, data, inpage=5):
+        """
+        :param data: Список данных.
+        :param inpage: Кол-во вывода на странице. По умолчанию 5.
+        """
+
+        self.arr = data
+        self.last_page = (len(data) // self.inpage)
+        self.inpage = inpage
 
     def list(self, page):
-        """Выводит определенное кол-во кнопок.
-        За это кол-во отвечает переменная inpage."""
-        return [i for i in self.arr[page*inpage:(page+1)*inpage]]
+        """
+        :param page: int. Страница вывода.
+        :return: list of data in self.arr.
+                    Возвращает срез списка 'self.arr' по странице 'page'.
+        """
+
+        if page < 0:
+            page = 0
+        elif page > self.last_page:
+            page = self.last_page
+
+        return [i for i in self.arr[page * self.inpage:(page + 1) * self.inpage]]
 
     def msg(self, page):
+        """
+        :param page: int. Текущая страница.
+        :return: str. Строка вида "Страница 'page' из 'self.last_page'".
+        """
+
+        if page < 0:
+            page = 0
+        elif page > self.last_page:
+            page = self.last_page
+
         return '\nСтраница {} из {}'.format(page + 1, self.last_page + 1)
 
 
 def create_markup(*buttons, width=3):
-    """Создает разметку с шириной width(по умолчанию = 3).
-    Берет на вход переменное количество списка кнопок.
-    При разделении списка выведет кнопки на разных строках.
-    Т.е. [b1, b2] будут на одной;
-         [b1], [b2] будут на разных.
-    При условии, width >= 2."""
+    """
+    Создает разметку кнопок '*buttons' с шириной 'width'.
+
+    :param buttons: lists of InlineKeyboardMarkup. Списки из 'InlineKeyboardMarkup'.
+                    При разделении списка выведет кнопки на разных строках.
+                    Т.е. '[b1, b2]' будут на одной;
+                        '[b1], [b2]' будут на разных.
+    :param width: int. Кол-во кнопок на одной строке. По умолчанию 3.
+    :return: InlineKeyboardMarkup. Возвращает разметку кнопок.
+    """
+
     markup = types.InlineKeyboardMarkup(row_width=width)
     for button in buttons:
         markup.add(*button)
