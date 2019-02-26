@@ -1,6 +1,6 @@
 import sqlite3 as sql
 
-def get_user_by_id(user_id):
+def get_user(user_id):
     '''
         Возвращает словарь полей по id
         :param id: id- идентификатор юзера
@@ -42,7 +42,7 @@ def get_user_courses(user_id):
             con.close()
             return list(res)
     else:
-        return None
+        return []
 def set_user(user_id,field,value):
     '''
     В поле field таблицы User записывает значение value
@@ -91,43 +91,58 @@ def get_teacher_courses(id_teacher):
     for i in res:
         a.append(i[0])
     return a
-def add_course_stud(stud_id,course_id):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
-    cur=con.cursor()
-    cur.execute("Pragma foreign_keys = ON")
-    con.commit()
-    cur.execute("""Insert into User_Course(id_user,id_course) values (?,?)""",[stud_id,course_id])
-    con.commit()
-    con.close()
-    return stud_id
-def del_course_stud(stud_id,course_id):
+def create_teacher_invitation(username):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
-    cur.execute("Pragma foreign_keys = ON")
-    con.commit()
-    cur.execute("""Delete from User_course
-                where id_user=? and id_course=?""",[stud_id,course_id])
-    con.commit()
-    con.close()
-    return stud_id
-def write_teacher_username(username,name):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
-    cur = con.cursor()
-    cur.execute("""Insert into Teacher_username values(?,?)""",[username,name])
-    con.commit()
-def is_teacher_username(username):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
-    cur = con.cursor()
-    cur.execute("""Select name from Teacher_username
+    cur.execute("""Select username from Teacher_invitation
                 where username=?""",[username])
-    c = cur.fetchall()
-    if(c):
-        cur.execute("""Delete from Teacher_username
-                    where username=?""",[username])
+    c=cur.fetchone()
+    if not c:
+        cur.execute("""Insert into Teacher_invitation values(?)""",[username])
         con.commit()
-        return [1,c[0][0]]
+        con.close()
     else:
-        return [0,'']
-
-
-
+        con.close()
+def delete_teacher_invitation(username):
+    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    cur = con.cursor()
+    cur.execute("""Delete from Teacher_invitation
+                where username = ?""",[username])
+    con.commit()
+    con.close()
+def check_teacher_invitation(username):
+    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    cur = con.cursor()
+    cur.execute("""Select username from Teacher_invitation
+                where username = ?""",[username])
+    c=cur.fetchone()
+    if not c:
+        return 0
+    else:
+        return 1
+def fetch_all_users():
+    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    cur = con.cursor()
+    cur.execute("""Select u_id from User""")
+    c=cur.fetchall()
+    if c:
+        a = []
+        for i in c:
+            a.append(i[0])
+        return a
+    else:
+        return []
+def fetch_all_teachers():
+    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    cur = con.cursor()
+    type='teacher'
+    cur.execute("""Select u_id from User
+                where type_u=?""",[type])
+    c = cur.fetchall()
+    if c:
+        a = []
+        for i in c:
+            a.append(i[0])
+        return a
+    else:
+        return []

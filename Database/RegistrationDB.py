@@ -29,3 +29,23 @@ def get_email(user_id):
         return c[0][0]
     else:
         return None
+def create_code(user_id,code):
+    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    cur = con.cursor()
+    cur.execute("""Insert into Registration_code values(?,?)""",[user_id,code])
+    con.commit()
+    con.close()
+def pop_code(user_id):
+    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    cur = con.cursor()
+    cur.execute("""Select code from Registration_code 
+                where user_id = ?""",[user_id])
+    c=cur.fetchone()
+    cur.execute("""Delete from Registration_code
+                where user_id=?""",[user_id])
+    con.commit()
+    con.close()
+    if c is not None:
+        return c[0]
+    else:
+        return None

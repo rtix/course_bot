@@ -165,7 +165,10 @@ def get_mark(course_id,task_id,user_id):
     con.commit()
     cur.execute("""Select * from Marks
                 where course_id=? and task_id=? and user_id=?""",[course_id,task_id,user_id])
-    c=cur.fetchall()[0]
+    try:
+        c=cur.fetchall()[0]
+    except IndexError:
+        return {}
     con.close()
     d={'mark':c[0],'task_id':c[1],'user_id':c[2],'course_id':c[3],'date':c[4]}
     return d
@@ -276,7 +279,7 @@ def get_attendance(course_id,cw_id,user_id):
         d={'course_id':c[0],'cw_id':c[1],'user_id':c[2],'value':c[3]}
         return d
     else:
-        return None
+        return {}
 def set_attendance(course_id,cw_id,user_id,field,value):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -381,6 +384,19 @@ def delete_literature(course_id, lit_id):
     con.commit()
     con.close()
     return lit_id
+def fetch_all_courses():
+    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    cur = con.cursor()
+    cur.execute("""Select id from Course""")
+    c=cur.fetchall()
+    if c is None:
+        con.close()
+        return None
+    else:
+        a = []
+        for i in c:
+            a.append(i[0])
+        return a
 
 
 

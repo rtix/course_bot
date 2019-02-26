@@ -1,21 +1,27 @@
+import operator
 import os
 
 from telebot import types
+
 
 # путь к сообщениям
 mespath = 'UI' + os.sep + 'messages' + os.sep
 
 
 class Paging:
-    def __init__(self, data, inpage=5):
+    def __init__(self, data, inpage=5, sort_key=''):
         """
-        :param data: Список данных.
-        :param inpage: Кол-во вывода на странице. По умолчанию 5.
+        :param data: Iterable. Список данных.
+        :param inpage: int. Кол-во вывода на странице. По умолчанию 5.
+        :param sort_key: str. Ключ сортировки.
         """
 
         self.arr = data
-        self.last_page = (len(data) // self.inpage)
+        self.last_page = ((len(data)-1) // inpage)
         self.inpage = inpage
+
+        if sort_key:
+            self.arr = sorted(self.arr, key=operator.attrgetter(sort_key))
 
     def list(self, page):
         """
@@ -24,6 +30,8 @@ class Paging:
                     Возвращает срез списка 'self.arr' по странице 'page'.
         """
 
+        if page == '':
+            page = 0
         if page < 0:
             page = 0
         elif page > self.last_page:

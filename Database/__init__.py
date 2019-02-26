@@ -2,6 +2,12 @@ from Database.CourseDB import *
 from Database.UserDB import *
 from Database.RegistrationDB import*
 import sqlite3
+import configparser
+
+sets = configparser.ConfigParser()
+sets.read('settings.cfg')
+
+username = sets['default']['username']
 con = sqlite3.connect('./Database/DB_FOR_TBOT.db')
 con.cursor().execute("""Create table if not exists User(
                 name text,
@@ -10,9 +16,8 @@ con.cursor().execute("""Create table if not exists User(
                 type_u text,
                 u_id integer not null primary key)""")
 con.commit()
-con.cursor().execute("""Create table if not exists Teacher_username(
-                    username text unique,
-                    name text)""")
+con.cursor().execute("""Create table if not exists Teacher_invitation(
+                    username text unique)""")
 con.commit()
 con.cursor().execute("""Create table if not exists Course(
                 name text not null,
@@ -49,9 +54,8 @@ con.cursor().execute("""Create table if not exists Marks(
                 user_id integer not null,
                 course_id integer not null,
                 date text,
-                primary key(task_id,user_id,course_id),
                 foreign key(course_id) references Course(id) on delete cascade,
-                foreign key(task_id) references Tasks(number) on delete cascade,
+                foreign key(task_id) references Tasks(task_id) on delete cascade,
                 foreign key(user_id) references User(u_id) on delete cascade)""")
 con.commit()
 con.cursor().execute("""Create table if not exists Classworks(
@@ -88,4 +92,10 @@ con.cursor().execute("""Create table if not exists Literature(
                     foreign key(course_id) references Course(id) on delete cascade)
                     """)
 con.commit()
+con.cursor().execute("""Create table if not exists Registration_code(
+                    user_id int not null primary key,
+                    code text not null)""")
+con.commit()
+if not fetch_all_teachers():
+    create_teacher_invitation(username)
 con.close()
