@@ -795,6 +795,7 @@ def callback_course_act(call, _command=None, _course_id=None, back=False):
         markup = ui.create_markup([tbt.tasks(course_id), tbt.attendance(course_id)],
                                   [tbt.participants(course_id, back_to)],
                                   [tbt.course_out(course_id)],
+                                  [tbt.announce(course_id)],
                                   [tbt.delete(course_id), tbt.redact(course_id, back_to)],
                                   [cbt.back('teach')]
                                   )
@@ -1026,6 +1027,77 @@ def callback_managing(call, _command=None, _course_id=None, page=0, back=False):
         else:
             call.message.message_id = bot.send_message(message.chat.id, 'empty').message_id
         callback_course_act(call, 'mng', course_id, True)
+    elif command == 'ance':
+        def summary():
+            file_names = [doc.file_name for doc in ann_info['files']]
+            write = 'изменить' if ann_info['text'] else 'написать'
+            bot.send_message(chat_id=message.chat.id,
+                             text=cfg.messages['new_announce'].format(text=ann_info['text'],
+                                                                      files=file_names, write=write
+                                                                      ),
+                             parse_mode='Markdown'
+                             )
+            bot.register_next_step_handler(message, command)
+            return
+
+        def command(msg):
+            if msg.text == '/q':
+                bot.send_message(msg.chat.id, '*----Отправление объявления отменено----*',
+                                 parse_mode='Markdown'
+                                 )
+                call.message.message_id = bot.send_message(msg.chat.id, 'empty').message_id
+                callback_course_act(call, 'mng', course_id, True)
+                return
+            elif msg.text == '/text':
+                def get(msg):
+                    if msg.text != '/q':
+                        ann_info['text'] = msg.text
+
+                    summary()
+                    return
+
+                bot.send_message(message.chat.id, 'Напишите текст:\n/q чтобы отменить изменение')
+                bot.register_next_step_handler(msg, get)
+                return
+            elif msg.text == '/file':
+                def get(msg):
+                    if msg.document:
+                        ann_info['files'].append(msg.document)
+                    summary()
+                    return
+
+                bot.send_message(message.chat.id, 'Отправьте документ:\n/q чтобы отменить')
+                bot.register_next_step_handler(msg, get)
+                return
+            elif msg.text == '/go':
+                files = []
+                for file in ann_info['files']:
+                    downloaded_file = bot.download_file(bot.get_file(file.file_id).file_path)
+                    with open(tmp_path.name + os.sep + file.file_name, 'bw') as new_file:
+                        new_file.write(downloaded_file)
+                    files.append(new_file.name)
+                for student in course.participants:
+                    bot.send_message(student.id, cfg.messages['announce'].format(text=ann_info['text']))
+                    for file in files:
+                        bot.send_document(student.id, open(file, 'br'))
+
+                bot.send_message(message.chat.id, 'Объявление отправлено.')
+                call.message = bot.send_message(message.chat.id, 'empty')
+                callback_course_act(call, 'mng', course_id, True)
+                return
+            else:
+                bot.send_message(msg.chat.id, 'Не понял. Повторите.')
+                bot.register_next_step_handler(msg, command)
+                return
+
+        ann_info = dict(text='', files=[])
+        try:
+            bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id,
+                                  text='*----Начато отправление объявления----*', parse_mode='Markdown'
+                                  )
+        except telebot.apihelper.ApiException as ex:
+            print(ex)
+        summary()
 
 
 # добавить/убрать занятие

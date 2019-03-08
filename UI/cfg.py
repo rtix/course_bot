@@ -22,4 +22,6 @@ messages = {'start': open(ui.mespath + 'start', encoding='utf-8').read(),
             'red': open(ui.mespath + 'redact', encoding='utf-8').read(),
             'user': open(ui.mespath + 'user', encoding='utf-8').read(),
             'mark_o': open(ui.mespath + 'mark_one', encoding='utf-8').read(),
-            'mark_a': open(ui.mespath + 'mark_all', encoding='utf-8').read()}
+            'mark_a': open(ui.mespath + 'mark_all', encoding='utf-8').read(),
+            'new_announce': open(ui.mespath + 'new_announce', encoding='utf-8').read(),
+            'announce': open(ui.mespath + 'announce', encoding='utf-8').read()}

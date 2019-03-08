@@ -269,3 +269,12 @@ def task_xl(course_id):
         )
 
     return button
+
+
+def announce(course_id):
+    button = InlineKeyboardButton(
+        'Сделать объявление',
+        callback_data=dumps(dict(type='managing', cmd='ance', id=course_id))
+        )
+
+    return button
