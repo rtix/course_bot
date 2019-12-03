@@ -4,8 +4,8 @@ from json import dumps
 
 from telebot.types import InlineKeyboardButton
 
-import Course
-import User
+from Models import Course
+from Models import User
 
 
 # выводит управляемые курсы

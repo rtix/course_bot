@@ -15,6 +15,7 @@ def create_course(owner_id,course_name):
     cur.execute("Insert into Course(name,owner,id) values(?,?,?)",[course_name,owner_id,c])
     con.commit()
     return c
+
 def create_user_course(id_user,id_course):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -23,6 +24,7 @@ def create_user_course(id_user,id_course):
     cur.execute("Insert into User_course(id_user,id_course) values(?,?)",[id_user,id_course])
     con.commit()
     con.close()
+
 def get_course(course_id):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -80,6 +82,7 @@ def get_course(course_id):
          'task_numbers': c, 'cw_numbers': e, 'lit_numbers': f}
     con.close()
     return d
+
 def get_course_participants(course_id):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur=con.cursor()
@@ -91,6 +94,7 @@ def get_course_participants(course_id):
         c.append(i[0])
     con.close()
     return c
+
 def create_task(course_id,task_name,task_descr,task_highest_mark,deadline):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur=con.cursor()
@@ -108,6 +112,7 @@ def create_task(course_id,task_name,task_descr,task_highest_mark,deadline):
                 ,[course_id,task_descr,task_highest_mark,task_name,deadline])
     con.commit()
     return c
+
 def get_task(course_id,task_id):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur=con.cursor()
@@ -117,6 +122,7 @@ def get_task(course_id,task_id):
     d={'course_id':res[0],'description':res[1],'highest_mark':res[2],'name':res[3],'task_id':res[4],'deadline':res[5]}
     con.close()
     return d
+
 def set_course(course_id,field,value):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur=con.cursor()
@@ -128,6 +134,7 @@ def set_course(course_id,field,value):
     con.commit()
     con.close()
     return course_id
+
 def set_task(course_id,task_id,field,value):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur=con.cursor()
@@ -139,6 +146,7 @@ def set_task(course_id,task_id,field,value):
     con.commit()
     con.close()
     return course_id
+
 def delete_course(course_id):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -149,6 +157,7 @@ def delete_course(course_id):
     con.commit()
     con.close()
     return course_id
+
 def create_mark(course_id,task_id,user_id,mark,date):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -158,6 +167,7 @@ def create_mark(course_id,task_id,user_id,mark,date):
     con.commit()
     con.close()
     return task_id
+
 def get_mark(course_id,task_id,user_id):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -172,6 +182,7 @@ def get_mark(course_id,task_id,user_id):
     con.close()
     d={'mark':c[0],'task_id':c[1],'user_id':c[2],'course_id':c[3],'date':c[4]}
     return d
+
 def set_mark(course_id,task_id,user_id,field,value):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -183,6 +194,7 @@ def set_mark(course_id,task_id,user_id,field,value):
     con.commit()
     con.close()
     return task_id
+
 def delete_mark(course_id,task_id,user_id):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -193,6 +205,7 @@ def delete_mark(course_id,task_id,user_id):
     con.commit()
     con.close()
     return task_id
+
 def delete_task(course_id,task_id):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -203,6 +216,7 @@ def delete_task(course_id,task_id):
     con.commit()
     con.close()
     return task_id
+
 def create_classwork(course_id,cw_name,cw_date):
     con=sql.connect("./Database/DB_FOR_TBOT.db")
     cur=con.cursor()
@@ -220,6 +234,7 @@ def create_classwork(course_id,cw_name,cw_date):
     con.commit()
     con.close()
     return c
+
 def set_classwork(course_id,cw_id,field,value):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -230,7 +245,7 @@ def set_classwork(course_id,cw_id,field,value):
                 where course_id = ? and classwork_id=?""".format(field),[value,course_id,cw_id])
     con.commit()
     con.close()
-    return 1
+    
 def delete_classwork(course_id,cw_id):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -241,6 +256,7 @@ def delete_classwork(course_id,cw_id):
     con.commit()
     con.close()
     return cw_id
+
 def get_classwork(course_id,cw_id):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -256,6 +272,7 @@ def get_classwork(course_id,cw_id):
         return d
     else:
         return None
+
 def create_attendance(course_id,cw_id,user_id,value):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -264,7 +281,7 @@ def create_attendance(course_id,cw_id,user_id,value):
     cur.execute("""Insert into Attendance values(?,?,?,?)""",[course_id,cw_id,user_id,value])
     con.commit()
     con.close()
-    return 1
+    
 def get_attendance(course_id,cw_id,user_id):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -280,6 +297,7 @@ def get_attendance(course_id,cw_id,user_id):
         return d
     else:
         return {}
+
 def set_attendance(course_id,cw_id,user_id,field,value):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -290,7 +308,7 @@ def set_attendance(course_id,cw_id,user_id,field,value):
                 where course_id=? and cw_id=? and user_id=?""".format(field),[value,course_id,cw_id,user_id])
     con.commit()
     con.close()
-    return 1
+    
 def delete_attendance(course_id,cw_id,user_id):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -300,7 +318,7 @@ def delete_attendance(course_id,cw_id,user_id):
                 where course_id=? and user_id=? and cw_id=?""",[course_id,user_id,cw_id])
     con.commit()
     con.close()
-    return 1
+    
 def append_to_blacklist(course_id,user_id):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -309,7 +327,7 @@ def append_to_blacklist(course_id,user_id):
     cur.execute("""Insert into Blacklist values (?,?)""",[course_id,user_id])
     con.commit()
     con.close()
-    return 1
+    
 def remove_from_blacklist(course_id,user_id):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -319,7 +337,7 @@ def remove_from_blacklist(course_id,user_id):
                 where course_id=? and user_id=?""",[course_id,user_id])
     con.commit()
     con.close()
-    return 1
+    
 def append_user_course(stud_id,course_id):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur=con.cursor()
@@ -329,6 +347,7 @@ def append_user_course(stud_id,course_id):
     con.commit()
     con.close()
     return stud_id
+
 def remove_user_course(stud_id,course_id):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -339,6 +358,7 @@ def remove_user_course(stud_id,course_id):
     con.commit()
     con.close()
     return stud_id
+
 def create_literature(course_id,name, description, file_id, url):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -350,6 +370,7 @@ def create_literature(course_id,name, description, file_id, url):
     d=cur.fetchone()[0]
     con.close()
     return d
+
 def get_literature(course_id,lit_id):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -364,7 +385,7 @@ def get_literature(course_id,lit_id):
         return d
     else:
         con.close()
-        return 0
+        
 def set_literature(course_id, lit_id,field,value):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -375,7 +396,7 @@ def set_literature(course_id, lit_id,field,value):
                 where course_id=? and lit_id=?""".format(field),[value,course_id,lit_id])
     con.commit()
     con.close()
-    return 1
+    
 def delete_literature(course_id, lit_id):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -384,6 +405,7 @@ def delete_literature(course_id, lit_id):
     con.commit()
     con.close()
     return lit_id
+
 def fetch_all_courses():
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -397,6 +419,3 @@ def fetch_all_courses():
         for i in c:
             a.append(i[0])
         return a
-
-
-

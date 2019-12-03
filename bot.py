@@ -13,11 +13,11 @@ from secrets import token_urlsafe as create_key
 
 import telebot
 
-import Course
-import Excel as xl
-import Mail
+from Models import Course
+from Models import Excel as xl
+from Models import Mail
+from Models import User
 import UI.cfg as cfg
-import User
 from UI.buttons import common as cbt, teacher as tbt
 from UI.cfg import ui
 
@@ -1591,10 +1591,14 @@ def callback_confirm(call):
         bot.send_message(message.chat.id, 'smthg went wrong\ncallback_confirm')
 
 
-while True:
-    try:
-        bot.polling()
-    except Exception:
-        print(traceback.print_exc())
-        time.sleep(10)
+def main():
+    while True:
+        try:
+            bot.polling()
+        except Exception:
+            print(traceback.print_exc())
+            time.sleep(10)
 
+
+if __name__ == '__main__':
+    main()

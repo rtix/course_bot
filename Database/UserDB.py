@@ -2,10 +2,10 @@ import sqlite3 as sql
 
 def get_user(user_id):
     '''
-        Возвращает словарь полей по id
-        :param id: id- идентификатор юзера
-        :return: словарь всех данных
-        '''
+    Возвращает словарь полей по id
+    :param id: id- идентификатор юзера
+    :return: словарь всех данных
+    '''
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
     cur.execute("""Select* from User
@@ -18,6 +18,7 @@ def get_user(user_id):
         return d
     else:
         return None
+
 def get_user_courses(user_id):
     '''
     Возвращает list курсов, на которые записан user c id_user = user_id
@@ -43,6 +44,7 @@ def get_user_courses(user_id):
             return list(res)
     else:
         return []
+
 def set_user(user_id,field,value):
     '''
     В поле field таблицы User записывает значение value
@@ -61,6 +63,7 @@ def set_user(user_id,field,value):
     con.commit()
     con.close()
     return user_id
+
 def create_user(id,name,group,email,type_u):
     """
     Паша, ну тут понятно, что делает функция.
@@ -79,7 +82,7 @@ def create_user(id,name,group,email,type_u):
     cur.execute("""Insert into User values(?,?,?,?,?)""",[name,group,email,type_u,id])
     con.commit()
     con.close()
-    return 1
+    
 def get_teacher_courses(id_teacher):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur=con.cursor()
@@ -91,6 +94,7 @@ def get_teacher_courses(id_teacher):
     for i in res:
         a.append(i[0])
     return a
+
 def create_teacher_invitation(username):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -103,6 +107,7 @@ def create_teacher_invitation(username):
         con.close()
     else:
         con.close()
+
 def delete_teacher_invitation(username):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -110,6 +115,7 @@ def delete_teacher_invitation(username):
                 where username = ?""",[username])
     con.commit()
     con.close()
+
 def check_teacher_invitation(username):
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -117,9 +123,10 @@ def check_teacher_invitation(username):
                 where username = ?""",[username])
     c=cur.fetchone()
     if not c:
-        return 0
+        return False
     else:
-        return 1
+        return True
+        
 def fetch_all_users():
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()
@@ -132,6 +139,7 @@ def fetch_all_users():
         return a
     else:
         return []
+
 def fetch_all_teachers():
     con = sql.connect("./Database/DB_FOR_TBOT.db")
     cur = con.cursor()

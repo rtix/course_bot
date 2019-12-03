@@ -1,5 +1,6 @@
 from Database import UserDB
-import Course
+from Models import Course
+
 
 class InterrelatedParametersError(Exception):
 	def __init__(self, *message):
@@ -7,11 +8,13 @@ class InterrelatedParametersError(Exception):
 	def __str__(self):
 		return "Expected interrelated parameters: {}. You have to use only one data set from this".format(" OR ".join([str(msg) for msg in self.message]))
 
+
 class TeacherAccessDeniedError(Exception):
 	def __init__(self, message):
 		self.message = str(message)
 	def __str__(self):
 		return "Access denied. {}".format(self.message)
+
 
 class UserTypeError(Exception):
 	def __init__(self, message):
@@ -19,7 +22,9 @@ class UserTypeError(Exception):
 	def __str__(self):
 		return "Wrong type of user: '{}'. Use 'teacher' or 'student' instead".format(self.message)
 
+
 class User():
+
 	def __init__(self, id, username='', name='', group='', email=''):
 		"""
 		Чтобы получить пользователя из базы данных используй только параметр id
@@ -41,34 +46,42 @@ class User():
 				else:
 					raise TeacherAccessDeniedError("Expected teacher")
 			UserDB.create_user(self.__id, name, group, email, type_u)
+
 	@property
 	def type_u(self):
 		user = UserDB.get_user(self.__id)
 		return user["type_u"] if user else 'unlogined'
+
 	@type_u.setter
 	def type_u(self, type_u):
 		if type_u in ('student', 'teacher'):
 			UserDB.set_user(self.__id, 'type_u', type_u)
 		else:
 			raise UserTypeError(type_u)
+
 	@property
 	def id(self):
 		return self.__id
+
 	@property
 	def name(self):
 		user = UserDB.get_user(self.__id)
 		return user["name"] if user else ""
+
 	@name.setter
 	def name(self, name):
 		UserDB.set_user(self.__id, 'name', name)
+
 	@property
 	def possessions(self): # Курсы под владением
 		user = UserDB.get_user(self.__id)
 		return tuple(Course.Course(course_id) for course_id in UserDB.get_teacher_courses(self.__id)) if user else []
+
 	@property
 	def participation(self): # Участие в курсах
 		user = UserDB.get_user(self.__id)
 		return tuple(Course.Course(course_id) for course_id in UserDB.get_user_courses(self.__id)) if user else []
+
 	def invite_teacher(self, username):
 		"""
 		Приглашение нового учителя по username
@@ -78,6 +91,7 @@ class User():
 			UserDB.create_teacher_invitation(username)
 		else:
 			raise TeacherAccessDeniedError("Expected Teacher")
+
 	def create_course(self, course_name):
 		"""
 		Вызывается у teacher, создает курс
@@ -89,6 +103,7 @@ class User():
 			return Course.Course(owner_id=self.__id, name=course_name)
 		else:
 			raise TeacherAccessDeniedError("Expected teacher")
+		
 	def delete_course(self, course_id):
 		course_to_delete = Course.Course(course_id)
 		if course_to_delete.owner.id == self.__id:

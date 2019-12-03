@@ -1,6 +1,6 @@
 from Database.CourseDB import *
 from Database.UserDB import *
-from Database.RegistrationDB import*
+from Database.RegistrationDB import *
 import sqlite3
 import configparser
 

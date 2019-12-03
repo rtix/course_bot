@@ -4,7 +4,7 @@ from json import dumps
 
 from telebot.types import InlineKeyboardButton
 
-import Course
+from Models import Course
 
 registration = InlineKeyboardButton(
     'Зарегистрироваться',
