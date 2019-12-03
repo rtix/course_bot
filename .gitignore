@@ -102,3 +102,13 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# eika
+*~
+/.idea/
+
+# DB
+/Database/DB_FOR_TBOT.db
+
+# output
+/ExcelData/
