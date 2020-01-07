@@ -3,7 +3,7 @@ import Bot.config
 
 
 def main():
-    Bot.bot.start()
+    Bot.bot.go()
 
 
 if __name__ == '__main__':
