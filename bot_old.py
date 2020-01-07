@@ -29,7 +29,7 @@ if not Mail.check_valid(sets['mail']['email']):
     raise Mail.WrongEMail("Неправильный email в файле настроек.")
 email = Mail.Mail(sets['mail']['email'], sets['mail']['password'])
 
-bot = telebot.TeleBot(sets['bot']['token'], threaded=False)
+bot = telebot.TeleBot(sets['Bot']['token'], threaded=False)
 
 # создание временной папки для времменых файлов
 tmp_path = tempfile.TemporaryDirectory(prefix='kfubot-')
