@@ -13,6 +13,11 @@ if not Mail.check_valid(sets['mail']['email']):
 
 bot = telebot.TeleBot(sets['bot']['token'])
 
+if sets['optional']['proxy']:
+    telebot.apihelper.proxy = {
+        'https': sets['optional']['proxy']
+    }
+
 email = Mail.Mail(sets['mail']['email'], sets['mail']['password'], sets['optional']['smtp_host'])
 
 
