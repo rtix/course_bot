@@ -106,9 +106,13 @@ venv.bak/
 # eika
 *~
 /.idea/
+.directory
 
 # DB
 /Database/DB_FOR_TBOT.db
 
 # output
 /ExcelData/
+
+# junk
+/.usermovements/
