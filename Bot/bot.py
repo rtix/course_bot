@@ -100,12 +100,9 @@ def course_list(call):
 
     p = ui.Paging(courses, sort_key='name')
     text += p.msg(call_data['page'])
-    markup = ui.create_markup(*[[i] for i in cbt.course([i.id for i in p.list(page)])],
-                              [cbt.paging_forward(cbt.course_list_of, call_data['type'], page),
-                               cbt.paging_backward(cbt.course_list_of, call_data['type'], page)],
-                              [cbt.back()],
-                              width=2
-                              )  # TODO
+    markup = ui.create_listed_markup(p.list(page), list_type=cbt.course_list_of, args=(call_data['type'], page),
+                                     width=2
+                                     )
 
     save_user_movement(call.message.chat.id, call.message.message_id, loads(call.data))
     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,

@@ -2,6 +2,8 @@ import operator
 
 from telebot import types
 
+import UI.buttons.common as c
+
 
 class Paging:
     def __init__(self, data, inpage=5, sort_key=''):
@@ -12,7 +14,7 @@ class Paging:
         """
 
         self.arr = data
-        self.last_page = ((len(data)-1) // inpage)
+        self.last_page = ((len(data) - 1) // inpage)
         self.inpage = inpage
 
         if sort_key:
@@ -48,10 +50,11 @@ class Paging:
         return '\nСтраница {} из {}'.format(page + 1, self.last_page + 1)
 
 
-def create_markup(*buttons, width=3):
+def create_markup(*buttons, width=3, include_back=True):
     """
     Создает разметку кнопок '*buttons' с шириной 'width'.
 
+    :param include_back: bool. Влияет на наличие кнопки "назад"
     :param buttons: lists of InlineKeyboardMarkup. Списки из 'InlineKeyboardMarkup'.
                     При разделении списка выведет кнопки на разных строках.
                     Т.е. '[b1, b2]' будут на одной;
@@ -63,5 +66,24 @@ def create_markup(*buttons, width=3):
     markup = types.InlineKeyboardMarkup(row_width=width)
     for button in buttons:
         markup.add(*button)
+    if include_back:
+        markup.add(c.back())
 
     return markup
+
+
+def create_listed_markup(list, *, list_type, args, width=3):
+    """
+    Создает клавиатуру со списком, разделенный на страницы.
+
+    :param list: list of "list_type". Список перечисляемого
+    :param list_type: func from UI.buttons. Действие, которое будет выполнять кнопка списка
+    :param width: int. Кол-во кнопок на одной строке. По умолчанию 3
+    :param args: list. Аргументы для функции "list_type"
+    :return: InlineKeyboardMarkup. Возвращает разметку кнопок
+    """
+
+    return create_markup(*[[i] for i in c.course([i.id for i in list])],
+                         [c.paging_backward(list_type, *args), c.paging_forward(list_type, *args)],
+                         width=width
+                         )
