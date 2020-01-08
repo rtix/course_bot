@@ -1,6 +1,6 @@
 """Общие кнопки, которые есть у всех юзеров"""
 
-from json import dumps
+from json import dumps, loads
 
 from telebot.types import InlineKeyboardButton
 
@@ -11,36 +11,61 @@ registration = InlineKeyboardButton(
     callback_data=dumps(dict(type='reg'))
     )
 
-# выводит все курсы
-all_courses = InlineKeyboardButton(
-    'Все курсы',
-    callback_data=dumps(dict(type='menu', cmd='all_courses', page=0))
-    )
 
-# выводит курсы, на которые записан
-my_courses = InlineKeyboardButton(
-    'Мои курсы',
-    callback_data=dumps(dict(type='menu', cmd='my_courses', page=0))
-    )
+def back():
+    return InlineKeyboardButton('Назад', callback_data='back')
 
 
-def course(id, prev='', back_page=0):
+def paging_forward(data_func, *args):
+    """
+    Создает кнопку вперед для переключения страницы списка
+
+    :param data_func: func from UI.buttons. Действие, которое будет возвращать кнопка
+    :return: InlineKeyboardButton
+    """
+
+    goto_data = loads(data_func(*args).callback_data)
+    goto_data['page'] += 1
+    text = '>>'
+
+    return InlineKeyboardButton(text, callback_data=dumps(goto_data))
+
+
+def paging_backward(data_func, *args):
+    """
+    Создает кнопку назад для переключения страницы списка
+
+    :param data_func: func from UI.buttons. Действие, которое будет возвращать кнопка
+    :return: InlineKeyboardButton
+    """
+
+    goto_data = loads(data_func(*args).callback_data)
+    goto_data['page'] -= 1
+    text = '<<'
+
+    return InlineKeyboardButton(text, callback_data=dumps(goto_data))
+
+
+def course_list_of(what, page=0):
+    return InlineKeyboardButton(
+        'Все курсы' if what == 'all' else 'Мои курсы',
+        callback_data=dumps(dict(goto='course_list', type=what, page=page))
+        )
+
+
+def course(course_ids):
     """
     Берет на вход список 'id' и создает список кнопок с айди курса.
 
-    :param id: list of int. Список айди курсов.
-    :param prev: str. Меню в которое попадет при нажатии кнопки "Назад".
-    :param back_page: int. Страница для возврата. Чтобы, если зашел на курс из страницы 3,
-                        на ту же страницу и возвратился.
+    :param course_ids: list. Список айди курсов.
     :return: list of InlineKeyboardButton. Возвращает список кнопок с айди курсов.
     """
 
     arr = []
-    for i in id:
-        name = Course.Course(i).name
+    for id_ in course_ids:
         button = InlineKeyboardButton(
-            name,
-            callback_data=dumps(dict(type='courses', id=i, prev=prev, page=back_page))
+            Course.Course(id_).name,
+            callback_data=dumps(dict(goto='course', id=id_))
             )
         arr.append(button)
 
@@ -61,35 +86,6 @@ def leave(id, prev=None):
         'Отписаться',
         callback_data=dumps(dict(type='c_act', cmd='leave', id=id, prev=prev))
             )
-
-    return button
-
-
-# кнопка назад по аргументу to - куда возвращаться
-def back(to, extra='', extra1=''):
-    button = InlineKeyboardButton(
-        'Назад',
-        callback_data=dumps(dict(type='back', back=to, ex=extra, ex1=extra1))
-        )
-
-    return button
-
-
-# кнопка вперед
-def forward(type, page, cmd, id=None):
-    button = InlineKeyboardButton(
-        '>',
-        callback_data=dumps(dict(type=type, cmd=cmd, page=page + 1, id=id))
-        )
-
-    return button
-
-
-def backward(type, page, cmd, id=None):
-    button = InlineKeyboardButton(
-        '<',
-        callback_data=dumps(dict(type=type, cmd=cmd, page=page - 1, id=id))
-        )
 
     return button
 

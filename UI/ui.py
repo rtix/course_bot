@@ -1,11 +1,6 @@
 import operator
-import os
 
 from telebot import types
-
-
-# путь к сообщениям
-mespath = 'UI' + os.sep + 'messages' + os.sep
 
 
 class Paging:
@@ -37,7 +32,7 @@ class Paging:
         elif page > self.last_page:
             page = self.last_page
 
-        return [i for i in self.arr[page * self.inpage:(page + 1) * self.inpage]]
+        return [i for i in self.arr[(page * self.inpage):((page + 1) * self.inpage)]]
 
     def msg(self, page):
         """
