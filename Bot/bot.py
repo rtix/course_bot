@@ -19,8 +19,16 @@ def go():
 
 @bot.callback_query_handler(func=lambda call: call.data == 'back')
 def back(call):
-    call.data = get_user_movement(call.message.chat.id, call.message.message_id)
-    globals()[call.data['goto']](call)
+    try:
+        call.data = get_user_movement(call.message.chat.id, call.message.message_id)
+    except FileNotFoundError:
+        print('ERROR!\nUser\'s movement file missing\nuser_id: {}; message_id: {}'
+              .format(call.message.chat.id, call.message.message_id)
+              )
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        bot.send_message(call.message.chat.id, cfg.messages['bad_error'], parse_mode='Markdown')
+    else:
+        globals()[call.data['goto']](call)
 
 
 @bot.message_handler(commands=['start'])
@@ -97,7 +105,7 @@ def course_list(call):
                                cbt.paging_backward(cbt.course_list_of, call_data['type'], page)],
                               [cbt.back()],
                               width=2
-                              )
+                              )  # TODO
 
     save_user_movement(call.message.chat.id, call.message.message_id, loads(call.data))
     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
