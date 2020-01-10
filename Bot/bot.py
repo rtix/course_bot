@@ -1,16 +1,13 @@
 import re
 from json import loads
 
-import UI.ui as ui
 import UI.cfg as cfg
-from Bot.init import bot_init
+import UI.ui as ui
+from Bot import bot
 from Bot.util import save_user_movement, get_user_movement
 from Models import Course
 from Models import User
 from UI.buttons import common as cbt
-
-
-bot, mailer = bot_init()
 
 
 def go():
