@@ -13,7 +13,7 @@ registration = InlineKeyboardButton(
 
 
 def back():
-    return InlineKeyboardButton('Назад', callback_data='back')
+    return InlineKeyboardButton('Назад', callback_data=dumps(dict(goto='back')))
 
 
 def paging_forward(data_func, *args):
