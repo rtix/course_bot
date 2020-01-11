@@ -8,6 +8,10 @@ from Models import Course
 from Models import User
 
 
+def new_course():
+    return InlineKeyboardButton('Создать курс', callback_data=dumps(dict(goto='new_course')))
+
+
 # выводит управляемые курсы
 manage_list = InlineKeyboardButton(
     'Управление курсами',
@@ -22,12 +26,6 @@ def manage(id, prev=None):
         )
 
     return button
-
-
-create = InlineKeyboardButton(
-        'Создать курс',
-        callback_data=dumps(dict(type='new_course', cmd='NONE'))
-        )
 
 
 def delete(id):
