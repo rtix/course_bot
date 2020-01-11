@@ -25,7 +25,10 @@ def back(call):
         bot.delete_message(call.message.chat.id, call.message.message_id)
         bot.send_message(call.message.chat.id, cfg.messages['bad_error'], parse_mode='Markdown')
     else:
-        globals()[call.data['goto']](call)
+        if call.data == 'menu':
+            menu(call)
+        else:
+            globals()[loads(call.data)['goto']](call)
 
 
 @bot.message_handler(commands=['start'])
@@ -101,7 +104,7 @@ def course_list(call):
                                      width=2
                                      )
 
-    save_user_movement(call.message.chat.id, call.message.message_id, loads(call.data))
+    save_user_movement(call.message.chat.id, call.message.message_id, call.data)
     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
                           text=text, reply_markup=markup
                           )

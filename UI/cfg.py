@@ -16,7 +16,3 @@ static_markups = {
 messages = {
     i: open(MESSAGE_DIR + os.sep + i, encoding='utf-8').read() for i in os.listdir(MESSAGE_DIR)
 }
-
-prevs_dict = {
-    'course_list': 'menu'
-}

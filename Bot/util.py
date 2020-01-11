@@ -1,8 +1,8 @@
+import json
 import os
 import pickle
 
 from Bot.config import USER_MOVEMENT_DIR
-from UI.cfg import prevs_dict
 
 
 def save_user_movement(user_id, message_id, new_data):
@@ -26,7 +26,9 @@ def save_user_movement(user_id, message_id, new_data):
         with open(user_dir + str(message_id), 'rb') as file:
             data = pickle.load(file)
 
-    new_data['goto'] = prevs_dict[new_data['goto']]
+        if len(data) > 0 and json.loads(data[-1]).get('page') is not None:
+            data.pop()
+
     data.append(new_data)
     with open(user_dir + str(message_id), 'wb') as file:
         pickle.dump(data, file)
@@ -49,9 +51,12 @@ def get_user_movement(user_id, message_id):
     else:
         raise FileNotFoundError("for user id: {}\nfor message id: {}".format(user_id, message_id))
 
-    last = data.pop(-1)
+    try:
+        _, prev = data.pop(), data.pop()
+    except IndexError:
+        prev = 'menu'
 
     with open(user_dir + str(message_id), 'wb') as file:
         pickle.dump(data, file)
 
-    return last
+    return prev
