@@ -4,7 +4,7 @@ from json import loads
 import UI.cfg as cfg
 import UI.ui as ui
 from Bot import bot
-from Bot.util import save_user_movement, get_user_movement
+from Bot.util import kfubot_callback, get_user_movement
 from Models import Course
 from Models import User
 from UI.buttons import common as cbt
@@ -87,6 +87,7 @@ def menu(call):
 
 
 @bot.callback_query_handler(func=lambda call: loads(call.data)['goto'] == 'course_list')
+@kfubot_callback
 def course_list(call):
     call_data = loads(call.data)
 
@@ -104,7 +105,6 @@ def course_list(call):
                                      width=2
                                      )
 
-    save_user_movement(call.message.chat.id, call.message.message_id, call.data)
     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
                           text=text, reply_markup=markup
                           )
