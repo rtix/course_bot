@@ -26,7 +26,7 @@ def save_user_movement(user_id, message_id, new_data):
         with open(user_dir + str(message_id), 'rb') as file:
             data = pickle.load(file)
 
-        if len(data) > 0 and json.loads(data[-1]).get('page') is not None:
+        if new_data.get('page') is not None and len(data) > 0 and json.loads(data[-1]).get('page') is not None:
             data.pop()
 
     data.append(new_data)
