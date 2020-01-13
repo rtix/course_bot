@@ -1,6 +1,5 @@
 import re
 import time
-from json import loads
 
 import UI.cfg as cfg
 import UI.ui as ui
@@ -29,7 +28,7 @@ def back(call):
         if call.data == 'menu':
             menu(call)
         else:
-            globals()[loads(call.data)['goto']](call)
+            globals()[call.data['goto']](call)
 
 
 def create_course(chat_id):
@@ -196,19 +195,17 @@ def new_course(call):
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'course_list')
 @kfubot_callback
 def course_list(call):
-    call_data = loads(call.data)
-
-    if call_data['type'] == 'all':
+    if call.data['type'] == 'all':
         courses = [i for i in Course.fetch_all_courses()]
         text = cfg.messages['all']
     else:
         courses = [i for i in User.User(call.message.chat.id).participation]
         text = cfg.messages['my']
-    page = call_data['page']
+    page = call.data['page']
 
     p = ui.Paging(courses, sort_key='name')
-    text += p.msg(call_data['page'])
-    markup = ui.create_listed_markup(p.list(page), list_type=cbt.course_list_of, args=(call_data['type'], page),
+    text += p.msg(call.data['page'])
+    markup = ui.create_listed_markup(p.list(page), list_type=cbt.course_list_of, args=(call.data['type'], page),
                                      width=2
                                      )
 
