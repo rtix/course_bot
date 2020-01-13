@@ -155,6 +155,23 @@ def start(message):
             pass
 
 
+@bot.message_handler(commands=['registration'])
+def registration(message):
+    def name(msg):
+        if re.fullmatch(r"[a-zA-Zа-яА-Я]+ [a-zA-Zа-яА-Я ]+", msg.text):
+            User.User(id=message.chat.id, username=message.from_user.username, name=msg.text)
+
+            bot.send_message(message.chat.id, '*---Регистрация пользователя завершена---*', parse_mode='Markdown')
+            menu_command(msg)
+        else:
+            bot.send_message(message.chat.id, 'Необходимо корректное имя-отчество(фамилия). Повторите:')
+            bot.register_next_step_handler(message, name)
+
+    bot.send_message(message.chat.id, '*---Регистрация пользователя---*', parse_mode='Markdown')
+    bot.send_message(message.chat.id, 'Введите ваше ФИО:')
+    bot.register_next_step_handler(message, name)
+
+
 @bot.message_handler(commands=['menu'])
 def menu_command(message):
     if User.User(message.chat.id).type_u == 'unlogined':

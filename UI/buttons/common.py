@@ -6,11 +6,6 @@ from telebot.types import InlineKeyboardButton
 
 from Models import Course
 
-registration = InlineKeyboardButton(
-    'Зарегистрироваться',
-    callback_data=dumps(dict(type='reg'))
-    )
-
 
 def back():
     return InlineKeyboardButton('Назад', callback_data=dumps(dict(goto='back')))
