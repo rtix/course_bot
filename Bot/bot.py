@@ -87,35 +87,35 @@ def create_course(chat_id):
         if message.text == '/name':
             text = 'Введите имя курса.\nМинимальная длина {} символов, максимальная {}.' \
                 .format(cfg.course_name_length_min, cfg.course_name_length_max)
-            msg = bot.send_message(chat_id, text)
-            bot.register_next_step_handler(msg, name)
+            bot.send_message(chat_id, text)
+            bot.register_next_step_handler(message, name)
         elif message.text == '/desc':
             text = 'Введите описание курса.\nМинимальная длина {} символов, максимальная {}.' \
                 .format(cfg.course_desc_length_min, cfg.course_desc_length_max)
-            msg = bot.send_message(chat_id, text)
-            bot.register_next_step_handler(msg, desc)
+            bot.send_message(chat_id, text)
+            bot.register_next_step_handler(message, desc)
         elif message.text == '/lock':
             text = 'Введите, в течение скольки дней будет доступна запись на курс.\nЧтобы убрать закрытие введите 0.'
-            msg = bot.send_message(chat_id, text)
-            bot.register_next_step_handler(msg, lock)
+            bot.send_message(chat_id, text)
+            bot.register_next_step_handler(message, lock)
         elif message.text == '/create':
             if not course_info['name'] or not course_info['desc']:
-                msg = bot.send_message(chat_id, 'Имя курса и описания обязательны для создания.')
-                bot.register_next_step_handler(msg, get_user_command)
+                bot.send_message(chat_id, 'Имя курса и описания обязательны для создания.')
+                bot.register_next_step_handler(message, get_user_command)
             else:
                 c = Course.Course(owner_id=chat_id, name=course_info['name'])
                 c.description = course_info['desc']
                 c.entry_restriction = course_info['lock']
 
-                msg = bot.send_message(chat_id, '*---Создание курса завершено---*', parse_mode='Markdown')
-                menu_command(msg)
+                bot.send_message(chat_id, '*---Создание курса завершено---*', parse_mode='Markdown')
+                menu_command(message)
         elif message.text == '/exit':
-            msg = bot.send_message(chat_id, '*---Создание курса отменено---*', parse_mode='Markdown')
-            menu_command(msg)
+            bot.send_message(chat_id, '*---Создание курса отменено---*', parse_mode='Markdown')
+            menu_command(message)
         else:
             text = '*---Неверная команда. Попробуйте еще раз.\nexit чтобы выйти---*'
-            msg = bot.send_message(chat_id, text, parse_mode='Markdown')
-            bot.register_next_step_handler(msg, get_user_command)
+            bot.send_message(chat_id, text, parse_mode='Markdown')
+            bot.register_next_step_handler(message, get_user_command)
 
     creating = {
         'valid': '*Чтобы завершить создание /create.*',
@@ -135,7 +135,7 @@ def start(message):
             bot.send_message(message.chat.id, '*----Регистрация преподавателя завершена----*',
                              parse_mode='Markdown'
                              )
-            menu(msg)
+            menu_command(msg)
         else:
             bot.send_message(message.chat.id, 'Необходимо корректное имя-отчество(фамилия). Повторите:')
             bot.register_next_step_handler(message, name)
