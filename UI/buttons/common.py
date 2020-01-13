@@ -4,6 +4,7 @@ from json import dumps, loads
 
 from telebot.types import InlineKeyboardButton
 
+from Bot.util import save_confirm_message
 from Models import Course
 
 
@@ -45,7 +46,7 @@ def course_list_of(what, page=0):
     return InlineKeyboardButton(
         'Все курсы' if what == 'all' else 'Мои курсы',
         callback_data=dumps(dict(goto='course_list', type=what, page=page))
-        )
+    )
 
 
 def course(course_ids):
@@ -60,45 +61,56 @@ def course(course_ids):
     for id_ in course_ids:
         button = InlineKeyboardButton(
             Course.Course(id_).name,
-            callback_data=dumps(dict(goto='course', id=id_))
-            )
+            callback_data=dumps(dict(goto='course', course_id=id_))
+        )
         arr.append(button)
 
     return arr
 
 
-def enroll(id, prev=None):
-    button = InlineKeyboardButton(
+def confirm_enroll(course_id, confirm_text, user_id, message_id):
+    save_confirm_message(confirm_text, user_id, message_id)
+    return InlineKeyboardButton(
         'Записаться',
-        callback_data=dumps(dict(type='c_act', cmd='enroll', id=id, prev=prev))
-        )
+        callback_data=dumps(dict(goto='confirm', what='enroll', course_id=course_id))
+    )
 
-    return button
+
+def enroll(course_id):
+    return dict(goto='enroll', course_id=course_id)
+
+
+def confirm(what_data):
+    return InlineKeyboardButton('Да', callback_data=dumps(what_data))
+
+
+def dis_confirm():
+    return InlineKeyboardButton('Нет', callback_data=dumps(dict(goto='no')))
 
 
 def leave(id, prev=None):
     button = InlineKeyboardButton(
         'Отписаться',
         callback_data=dumps(dict(type='c_act', cmd='leave', id=id, prev=prev))
-            )
+    )
 
     return button
 
 
 def show_mark(id_course, prev='menu', page=0):
     button = InlineKeyboardButton(
-            'Успеваемость',
-            callback_data=dumps(dict(type='perf', id=id_course, page=page, prev=prev))
-            )
+        'Успеваемость',
+        callback_data=dumps(dict(type='perf', id=id_course, page=page, prev=prev))
+    )
 
     return button
 
 
 def task_list(id_course, prev='menu', page=0):
     button = InlineKeyboardButton(
-            'Список заданий',
-            callback_data=dumps(dict(type='task_s', id=id_course, page=page, prev=prev))
-            )
+        'Список заданий',
+        callback_data=dumps(dict(type='task_s', id=id_course, page=page, prev=prev))
+    )
 
     return button
 
@@ -109,9 +121,9 @@ def task(id_tasks, id_course, id_user, back_page=0):
     for i in id_tasks:
         task = Course.Task(id_course, i)
         button = InlineKeyboardButton(
-                '{}  {}/{}'.format(task.name, task.mark(id_user).value, task.highest_mark),
-                callback_data=dumps(dict(type='task_u', id=id_course, id_t=i, page=back_page))
-                )
+            '{}  {}/{}'.format(task.name, task.mark(id_user).value, task.highest_mark),
+            callback_data=dumps(dict(type='task_u', id=id_course, id_t=i, page=back_page))
+        )
         arr.append(button)
 
     return arr

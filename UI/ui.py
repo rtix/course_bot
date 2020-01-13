@@ -1,4 +1,5 @@
 import operator
+import time
 
 from telebot import types
 
@@ -87,3 +88,7 @@ def create_listed_markup(list, *, list_type, args, width=3):
                          [c.paging_backward(list_type, *args), c.paging_forward(list_type, *args)],
                          width=width
                          )
+
+
+def to_dtime(utime):
+    return time.strftime("%d %b %Y", time.localtime(float(utime))) if utime else None

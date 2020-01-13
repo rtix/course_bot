@@ -20,17 +20,18 @@ def save_user_movement(user_id, message_id, new_data):
     user_dir = USER_MOVEMENT_DIR + '/' + str(user_id) + '/'
     if not os.path.exists(user_dir):
         os.mkdir(user_dir)
+    path = user_dir + str(message_id)
     data = []
 
-    if os.path.exists(user_dir + str(message_id)):
-        with open(user_dir + str(message_id), 'rb') as file:
+    if os.path.exists(path):
+        with open(path, 'rb') as file:
             data = pickle.load(file)
 
         if (new_data.get('page') is not None) and (len(data) > 0) and (data[-1].get('page') is not None):
             data.pop()
 
     data.append(new_data)
-    with open(user_dir + str(message_id), 'wb') as file:
+    with open(path, 'wb') as file:
         pickle.dump(data, file)
 
 
@@ -44,27 +45,64 @@ def get_user_movement(user_id, message_id):
     """
 
     user_dir = USER_MOVEMENT_DIR + '/' + str(user_id) + '/'
+    path = user_dir + str(message_id)
 
-    if os.path.exists(user_dir + str(message_id)):
-        with open(user_dir + str(message_id), 'rb') as file:
+    if os.path.exists(path):
+        with open(path, 'rb') as file:
             data = pickle.load(file)
     else:
-        raise FileNotFoundError("for user id: {}\nfor message id: {}".format(user_id, message_id))
+        raise FileNotFoundError("Movement file: for user id: {}\nfor message id: {}".format(user_id, message_id))
 
     try:
         _, prev = data.pop(), data.pop()
     except IndexError:
         prev = 'menu'
 
-    with open(user_dir + str(message_id), 'wb') as file:
+    with open(path, 'wb') as file:
         pickle.dump(data, file)
 
     return prev
 
 
+def save_confirm_message(text, user_id, message_id):
+    if not os.path.exists(USER_MOVEMENT_DIR):
+        os.mkdir(USER_MOVEMENT_DIR)
+    user_dir = USER_MOVEMENT_DIR + '/' + str(user_id) + '/'
+    if not os.path.exists(user_dir):
+        os.mkdir(user_dir)
+    confirm_dir = user_dir + 'confirm/'
+    if not os.path.exists(confirm_dir):
+        os.mkdir(confirm_dir)
+
+    with open(confirm_dir + str(message_id), 'w') as file:
+        file.write('Вы уверены, что хотите {}?'.format(text))
+
+
+def get_confirm_message(user_id, message_id):
+    if not os.path.exists(USER_MOVEMENT_DIR):
+        os.mkdir(USER_MOVEMENT_DIR)
+    user_dir = USER_MOVEMENT_DIR + '/' + str(user_id) + '/'
+    if not os.path.exists(user_dir):
+        os.mkdir(user_dir)
+    confirm_dir = user_dir + 'confirm/'
+    if not os.path.exists(confirm_dir):
+        os.mkdir(confirm_dir)
+    path = confirm_dir + str(message_id)
+
+    if os.path.exists(path):
+        with open(path, 'r') as file:
+            text = file.read()
+    else:
+        raise FileNotFoundError("Confirm file: user id: {}\nfor message id: {}".format(user_id, message_id))
+
+    os.remove(path)
+    return text
+
+
 def kfubot_callback(func):
     def wrapper(call):
-        call.data = json.loads(call.data)
+        if type(call.data) is str:
+            call.data = json.loads(call.data)
         save_user_movement(call.message.chat.id, call.message.message_id, call.data)
         func(call)
 

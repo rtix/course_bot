@@ -1,10 +1,11 @@
+import json
 import re
 import time
 
 import UI.cfg as cfg
 import UI.ui as ui
 from Bot import bot
-from Bot.util import kfubot_callback, get_user_movement, goto
+from Bot.util import kfubot_callback, get_confirm_message, get_user_movement, goto
 from Models import Course
 from Models import User
 from UI.buttons import common as cbt
@@ -36,7 +37,7 @@ def create_course(chat_id):
         if course_info['lock'] is None:
             t = None
         else:
-            t = time.strftime("%d %b %Y", time.localtime(course_info['lock']))
+            t = ui.to_dtime(course_info['lock'])
 
         if course_info['name'] and course_info['desc']:
             c = creating['valid']
@@ -212,7 +213,7 @@ def new_course(call):
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'course_list')
 @kfubot_callback
 def course_list(call):
-    if call.data['type'] == 'all':
+    if call.data['type'] == 'all':  # TODO не добавлять закрытые курсы
         courses = [i for i in Course.fetch_all_courses()]
         text = cfg.messages['all']
     else:
@@ -229,6 +230,80 @@ def course_list(call):
     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
                           text=text, reply_markup=markup
                           )
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'course')
+@kfubot_callback
+def course(call):
+    course_ = Course.Course(call.data['course_id'])
+    num_par = len(course_.participants)
+    owner = course_.owner
+
+    if owner.id == call.message.chat.id:
+        lock = 'открыта' if time.time() < float(course_.entry_restriction) else 'закрыта'
+        desc = course_.description
+        if len(desc) > cfg.course_info_desc_length:
+            desc = desc[:cfg.course_info_desc_length] + '...'
+        text = cfg.messages['course_owner_min'].format(name=course_.name, num=num_par, lock=lock, desc=desc)
+        bot.edit_message_text(text=text, chat_id=call.message.chat.id, message_id=call.message.message_id,
+                              parse_mode='Markdown', reply_markup=ui.create_markup()
+                              )
+    elif course_.id in (c.id for c in User.User(call.message.chat.id).participation):
+        text = cfg.messages['course'].format(name=course_.name, fio=owner.name, num=num_par,
+                                             mail='', marks='', attend=''
+                                             )
+        bot.edit_message_text(text=text, chat_id=call.message.chat.id, message_id=call.message.message_id,
+                              parse_mode='Markdown', reply_markup=ui.create_markup()
+                              )
+    else:
+        text = cfg.messages['course_not_enroll'].format(name=course_.name, fio=owner.name,
+                                                        desc=course_.description, num=num_par,
+                                                        lock=ui.to_dtime(course_.entry_restriction), mail=''
+                                                        )  # TODO mail
+        c_text = 'записаться на курс *{}*'.format(course_.name)
+        markup = ui.create_markup(
+            [cbt.confirm_enroll(course_.id, c_text, call.message.chat.id, call.message.message_id)]
+        )
+        bot.edit_message_text(text=text, chat_id=call.message.chat.id, message_id=call.message.message_id,
+                              parse_mode='Markdown', reply_markup=markup
+                              )
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'enroll')
+def enroll(call):
+    call.data = json.loads(call.data)
+
+    if call.data['course_id'] not in (c.id for c in User.User(call.message.chat.id).participation):
+        c = Course.Course(call.data['course_id'])
+        c.append_student(call.message.chat.id)
+        bot.answer_callback_query(call.id, 'Вы записались на курс ' + c.name)
+    else:
+        bot.answer_callback_query(call.id, 'Вы уже записаны на этот курс!', show_alert=True)
+
+    force_back(call)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'confirm')
+def confirm(call):  # TODO сделать универсальной (290, вызов по 'what')
+    call.data = json.loads(call.data)
+
+    markup = ui.create_markup([cbt.confirm(cbt.enroll(call.data['course_id'])), cbt.dis_confirm()], include_back=False)
+    try:
+        text = get_confirm_message(call.message.chat.id, call.message.message_id)
+    except FileNotFoundError as ex:
+        print(ex)
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        bot.send_message(call.message.chat.id, cfg.messages['bad_error'], parse_mode='Markdown')
+    else:
+        bot.edit_message_text(text=text, chat_id=call.message.chat.id, message_id=call.message.message_id,
+                              parse_mode='Markdown', reply_markup=markup
+                              )
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'no')
+@kfubot_callback
+def force_back(call):
+    back(call)
 
 
 # DEBUG
