@@ -86,7 +86,7 @@ def create_course(chat_id):
 
     def get_user_command(message):
         if message.text == '/name':
-            text = 'Введите имя курса.\nМинимальная длина {} символов, максимальная {}.'\
+            text = 'Введите имя курса.\nМинимальная длина {} символов, максимальная {}.' \
                 .format(cfg.course_name_length_min, cfg.course_name_length_max)
             msg = bot.send_message(chat_id, text)
             bot.register_next_step_handler(msg, name)
@@ -101,7 +101,7 @@ def create_course(chat_id):
             bot.register_next_step_handler(msg, lock)
         elif message.text == '/create':
             if not course_info['name'] or not course_info['desc']:
-                msg = bot.send_message(chat_id, 'Имя курса и описания обязательные для создания.')
+                msg = bot.send_message(chat_id, 'Имя курса и описания обязательны для создания.')
                 bot.register_next_step_handler(msg, get_user_command)
             else:
                 c = Course.Course(owner_id=chat_id, name=course_info['name'])

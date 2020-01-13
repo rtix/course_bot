@@ -68,6 +68,7 @@ def kfubot_callback(func):
     def wrapper(*args):
         save_user_movement(args[0].message.chat.id, args[0].message.message_id, args[0].data)
         func(*args)
+
     return wrapper
 
 
