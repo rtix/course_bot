@@ -132,7 +132,7 @@ def start(message):
     def name(msg):
         if re.fullmatch(r"[a-zA-Zа-яА-Я]+ [a-zA-Zа-яА-Я ]+", msg.text):
             teacher.name = msg.text
-            bot.send_message(message.chat.id, '*----Регистрация преподавателя завершена----*',
+            bot.send_message(message.chat.id, '*---Регистрация преподавателя завершена---*',
                              parse_mode='Markdown'
                              )
             menu_command(msg)
@@ -146,7 +146,7 @@ def start(message):
         try:
             teacher = User.User(id=message.chat.id, username=message.from_user.username, name='noname')
 
-            bot.send_message(message.chat.id, '*----Регистрация преподавателя----*',
+            bot.send_message(message.chat.id, '*---Регистрация преподавателя---*',
                              parse_mode='Markdown'
                              )
             bot.send_message(message.chat.id, 'Введите ваше ФИО:')
@@ -201,7 +201,7 @@ def menu(call):
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'new_course')
 def new_course(call):
-    text = '*---Начато создание курса---*'
+    text = '*---Создание курса---*'
     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=text,
                           parse_mode='Markdown'
                           )
