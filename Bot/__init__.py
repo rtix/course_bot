@@ -3,6 +3,7 @@ import configparser
 import telebot
 
 import Bot.config
+import Bot.helper
 import Models.Mail
 
 sets = configparser.ConfigParser()
@@ -19,3 +20,5 @@ if sets['optional']['proxy']:
     }
 
 email = Models.Mail.Mail(sets['mail']['email'], sets['mail']['password'], sets['optional']['smtp_host'])
+
+botHelper = Bot.helper.BotHelper(bot)

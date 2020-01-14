@@ -1,7 +1,7 @@
 import operator
 import time
 
-from telebot import types
+import telebot.types as types
 
 import UI.buttons.common as c
 

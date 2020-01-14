@@ -4,8 +4,8 @@ import time
 
 import UI.cfg as cfg
 import UI.ui as ui
-from Bot import bot
-from Bot.util import kfubot_callback, get_confirm_message, get_user_movement, goto
+from Bot import botHelper, bot
+from Bot.util import kfubot_callback, get_confirm_message, goto
 from Models import Course
 from Models import User
 from UI.buttons import common as cbt
@@ -17,19 +17,30 @@ def go():
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'back')
 def back(call):
+    globals()[botHelper.get_back(call)](call)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'no')
+@kfubot_callback
+def force_back(call):
+    back(call)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'confirm')
+def confirm(call):
+    call.data = json.loads(call.data)
+
+    what_data = call.data.copy()
+    what_data.pop('goto'), what_data.pop('what')
+    markup = ui.create_markup([cbt.confirm(call.data['what'], **what_data), cbt.dis_confirm()], include_back=False)
     try:
-        call.data = get_user_movement(call.message.chat.id, call.message.message_id)
-    except FileNotFoundError:
-        print('ERROR!\nUser\'s movement file missing\nuser_id: {}; message_id: {}'
-              .format(call.message.chat.id, call.message.message_id)
-              )
+        text = get_confirm_message(call.message.chat.id, call.message.message_id)
+    except FileNotFoundError as ex:
+        print(ex)
         bot.delete_message(call.message.chat.id, call.message.message_id)
-        bot.send_message(call.message.chat.id, cfg.messages['bad_error'], parse_mode='Markdown')
+        botHelper.send_mes(cfg.messages['bad_error'], call.message.chat.id)
     else:
-        if call.data == 'menu':
-            menu(call)
-        else:
-            globals()[call.data['goto']](call)
+        botHelper.edit_mes(text, call, markup=markup)
 
 
 def create_course(chat_id):
@@ -49,7 +60,7 @@ def create_course(chat_id):
             c = creating['both']
 
         text = cfg.messages['new_course'].format(name=course_info['name'], desc=course_info['desc'], lock=t, create=c)
-        msg = bot.send_message(chat_id, text, parse_mode='Markdown')
+        msg = botHelper.send_mes(text, chat_id)
         bot.register_next_step_handler(msg, get_user_command)
 
     def name(message):
@@ -58,7 +69,7 @@ def create_course(chat_id):
             course_info['name'] = message.text
             idle()
         else:
-            bot.send_message(chat_id, 'Неверная длина имени курса. Попробуйте еще раз.')
+            botHelper.send_mes('Неверная длина имени курса. Попробуйте еще раз.', chat_id)
             message.text = '/name'
             get_user_command(message)
 
@@ -68,7 +79,7 @@ def create_course(chat_id):
             course_info['desc'] = message.text
             idle()
         else:
-            bot.send_message(chat_id, 'Неверная длина описания курса. Попробуйте еще раз.')
+            botHelper.send_mes('Неверная длина описания курса. Попробуйте еще раз.', chat_id)
             message.text = '/desc'
             get_user_command(message)
 
@@ -80,7 +91,7 @@ def create_course(chat_id):
             course_info['lock'] = time.time() + (int(message.text) * 24 * 60 * 60)
             idle()
         else:
-            bot.send_message(chat_id, 'Ошибочный ввод. Попробуйте еще раз.')
+            botHelper.send_mes('Ошибочный ввод. Попробуйте еще раз.', chat_id)
             message.text = '/lock'
             get_user_command(message)
 
@@ -88,34 +99,34 @@ def create_course(chat_id):
         if message.text == '/name':
             text = 'Введите имя курса.\nМинимальная длина {} символов, максимальная {}.' \
                 .format(cfg.course_name_length_min, cfg.course_name_length_max)
-            bot.send_message(chat_id, text)
+            botHelper.send_mes(text, chat_id)
             bot.register_next_step_handler(message, name)
         elif message.text == '/desc':
             text = 'Введите описание курса.\nМинимальная длина {} символов, максимальная {}.' \
                 .format(cfg.course_desc_length_min, cfg.course_desc_length_max)
-            bot.send_message(chat_id, text)
+            botHelper.send_mes(text, chat_id)
             bot.register_next_step_handler(message, desc)
         elif message.text == '/lock':
             text = 'Введите, в течение скольки дней будет доступна запись на курс.\nЧтобы убрать закрытие введите 0.'
-            bot.send_message(chat_id, text)
+            botHelper.send_mes(text, chat_id)
             bot.register_next_step_handler(message, lock)
         elif message.text == '/create':
             if not course_info['name'] or not course_info['desc']:
-                bot.send_message(chat_id, 'Имя курса и описания обязательны для создания.')
+                botHelper.send_mes('Имя курса и описания обязательны для создания.', chat_id)
                 bot.register_next_step_handler(message, get_user_command)
             else:
                 c = Course.Course(owner_id=chat_id, name=course_info['name'])
                 c.description = course_info['desc']
                 c.entry_restriction = course_info['lock']
 
-                bot.send_message(chat_id, '*---Создание курса завершено---*', parse_mode='Markdown')
+                botHelper.send_mes('*---Создание курса завершено---*', chat_id)
                 menu_command(message)
         elif message.text == '/exit':
-            bot.send_message(chat_id, '*---Создание курса отменено---*', parse_mode='Markdown')
+            botHelper.send_mes('*---Создание курса отменено---*', chat_id)
             menu_command(message)
         else:
             text = '*---Неверная команда. Попробуйте еще раз.\nexit чтобы выйти---*'
-            bot.send_message(chat_id, text, parse_mode='Markdown')
+            botHelper.send_mes(text, chat_id)
             bot.register_next_step_handler(message, get_user_command)
 
     creating = {
@@ -133,24 +144,20 @@ def start(message):
     def name(msg):
         if re.fullmatch(r"[a-zA-Zа-яА-Я]+ [a-zA-Zа-яА-Я ]+", msg.text):
             teacher.name = msg.text
-            bot.send_message(message.chat.id, '*---Регистрация преподавателя завершена---*',
-                             parse_mode='Markdown'
-                             )
+            botHelper.send_mes('*---Регистрация преподавателя завершена---*', message.chat.id)
             menu_command(msg)
         else:
-            bot.send_message(message.chat.id, 'Необходимо корректное имя-отчество(фамилия). Повторите:')
+            botHelper.send_mes('Необходимо корректное имя-отчество(фамилия). Повторите:', message.chat.id)
             bot.register_next_step_handler(message, name)
 
-    bot.send_message(message.chat.id, cfg.messages['start'])
+    botHelper.send_mes(cfg.messages['start'], message.chat.id)
 
     if User.User(message.chat.id).type_u == 'unlogined':
         try:
             teacher = User.User(id=message.chat.id, username=message.from_user.username, name='noname')
 
-            bot.send_message(message.chat.id, '*---Регистрация преподавателя---*',
-                             parse_mode='Markdown'
-                             )
-            bot.send_message(message.chat.id, 'Введите ваше ФИО:')
+            botHelper.send_mes('*---Регистрация преподавателя---*', message.chat.id)
+            botHelper.send_mes('Введите ваше ФИО:', message.chat.id)
             bot.register_next_step_handler(message, name)
         except User.TeacherAccessDeniedError:
             pass
@@ -162,51 +169,39 @@ def registration(message):
         if re.fullmatch(r"[a-zA-Zа-яА-Я]+ [a-zA-Zа-яА-Я ]+", msg.text):
             User.User(id=message.chat.id, username=message.from_user.username, name=msg.text)
 
-            bot.send_message(message.chat.id, '*---Регистрация пользователя завершена---*', parse_mode='Markdown')
+            botHelper.send_mes('*---Регистрация пользователя завершена---*', message.chat.id)
             menu_command(msg)
         else:
-            bot.send_message(message.chat.id, 'Необходимо корректное имя-отчество(фамилия). Повторите:')
+            botHelper.send_mes('Необходимо корректное имя-отчество(фамилия). Повторите:', message.chat.id)
             bot.register_next_step_handler(message, name)
 
-    bot.send_message(message.chat.id, '*---Регистрация пользователя---*', parse_mode='Markdown')
-    bot.send_message(message.chat.id, 'Введите ваше ФИО:')
+    botHelper.send_mes('*---Регистрация пользователя---*', message.chat.id)
+    botHelper.send_mes('Введите ваше ФИО:', message.chat.id)
     bot.register_next_step_handler(message, name)
 
 
 @bot.message_handler(commands=['menu'])
 def menu_command(message):
     if User.User(message.chat.id).type_u == 'unlogined':
-        bot.send_message(chat_id=message.chat.id, text=cfg.messages['new_user'])
+        botHelper.send_mes(cfg.messages['new_user'], message.chat.id)
     else:
         if User.User(message.chat.id).type_u == 'student':
-            bot.send_message(text=cfg.messages['menu'], chat_id=message.chat.id,
-                             reply_markup=cfg.static_markups['menu']
-                             )
+            botHelper.send_mes(cfg.messages['menu'], message.chat.id, markup=cfg.static_markups['menu'])
         else:
-            bot.send_message(text=cfg.messages['menu'], chat_id=message.chat.id,
-                             reply_markup=cfg.static_markups['menu_teach']
-                             )
+            botHelper.send_mes(cfg.messages['menu'], message.chat.id, markup=cfg.static_markups['menu_teach'])
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'menu')
 def menu(call):
     if User.User(call.message.chat.id).type_u == 'student':
-        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                              reply_markup=cfg.static_markups['menu'], text=cfg.messages['menu']
-                              )
+        botHelper.edit_mes(cfg.messages['menu'], call, markup=cfg.static_markups['menu'])
     else:
-        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                              reply_markup=cfg.static_markups['menu_teach'], text=cfg.messages['menu']
-                              )
+        botHelper.edit_mes(cfg.messages['menu'], call, markup=cfg.static_markups['menu_teach'])
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'new_course')
 def new_course(call):
-    text = '*---Создание курса---*'
-    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=text,
-                          parse_mode='Markdown'
-                          )
-
+    botHelper.edit_mes('*---Создание курса---*', call)
     create_course(call.message.chat.id)
 
 
@@ -223,13 +218,10 @@ def course_list(call):
 
     p = ui.Paging(courses, sort_key='name')
     text += p.msg(call.data['page'])
-    markup = ui.create_listed_markup(p.list(page), list_type=cbt.course_list_of, args=(call.data['type'], page),
-                                     width=2
+    markup = ui.create_listed_markup(p.list(page), list_type=cbt.course_list_of,
+                                     args=(call.data['type'], page), width=2
                                      )
-
-    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                          text=text, reply_markup=markup
-                          )
+    botHelper.edit_mes(text, call, markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'course')
@@ -248,9 +240,7 @@ def course(call):
         if len(desc) > cfg.course_info_desc_length:
             desc = desc[:cfg.course_info_desc_length] + '...'
         text = cfg.messages['course_owner_min'].format(name=course_.name, num=num_par, lock=lock, desc=desc)
-        bot.edit_message_text(text=text, chat_id=call.message.chat.id, message_id=call.message.message_id,
-                              parse_mode='Markdown', reply_markup=ui.create_markup()
-                              )
+        botHelper.edit_mes(text, call, markup=ui.create_markup())
     elif course_.id in (c.id for c in User.User(call.message.chat.id).participation):  # enrolled
         text = cfg.messages['course'].format(name=course_.name, fio=owner.name, num=num_par,
                                              mail='', marks='', attend=''
@@ -259,10 +249,7 @@ def course(call):
         markup = ui.create_markup(
             [cbt.confirm_leave(course_.id, c_text, call.message.chat.id, call.message.message_id)]
         )
-        bot.edit_message_text(text=text, chat_id=call.message.chat.id, message_id=call.message.message_id,
-                              parse_mode='Markdown',
-                              reply_markup=markup
-                              )
+        botHelper.edit_mes(text, call, markup=markup)
     else:  # not enrolled
         locked = ''
         end_entry = course_.entry_restriction
@@ -281,9 +268,7 @@ def course(call):
             markup = ui.create_markup(
                 [cbt.confirm_enroll(course_.id, c_text, call.message.chat.id, call.message.message_id)]
             )
-        bot.edit_message_text(text=text, chat_id=call.message.chat.id, message_id=call.message.message_id,
-                              parse_mode='Markdown', reply_markup=markup
-                              )
+        botHelper.edit_mes(text, call, markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'enroll')
@@ -312,31 +297,6 @@ def leave(call):
         bot.answer_callback_query(call.id, 'Вы не записаны на этот курс!', show_alert=True)
 
     force_back(call)
-
-
-@bot.callback_query_handler(func=lambda call: goto(call.data) == 'confirm')
-def confirm(call):
-    call.data = json.loads(call.data)
-
-    what_data = call.data.copy()
-    what_data.pop('goto'), what_data.pop('what')
-    markup = ui.create_markup([cbt.confirm(call.data['what'], **what_data), cbt.dis_confirm()], include_back=False)
-    try:
-        text = get_confirm_message(call.message.chat.id, call.message.message_id)
-    except FileNotFoundError as ex:
-        print(ex)
-        bot.delete_message(call.message.chat.id, call.message.message_id)
-        bot.send_message(call.message.chat.id, cfg.messages['bad_error'], parse_mode='Markdown')
-    else:
-        bot.edit_message_text(text=text, chat_id=call.message.chat.id, message_id=call.message.message_id,
-                              parse_mode='Markdown', reply_markup=markup
-                              )
-
-
-@bot.callback_query_handler(func=lambda call: goto(call.data) == 'no')
-@kfubot_callback
-def force_back(call):
-    back(call)
 
 
 # DEBUG
