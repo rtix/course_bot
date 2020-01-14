@@ -80,8 +80,16 @@ def enroll(course_id):
     return dict(goto='enroll', course_id=course_id)
 
 
-def confirm(what_data):
-    return InlineKeyboardButton('Да', callback_data=dumps(what_data))
+def confirm(what, **kwargs):
+    """
+    Создаёт кнопку положительного подтверждения дейтсвия, которая вернёт само действие.
+
+    :param what: str. Название действия; должно совпадать с именем функции из этого модуля.
+    :param kwargs: Аргументы вызываемой функции.
+    :return: InlineKeyboardButton.
+    """
+
+    return InlineKeyboardButton('Да', callback_data=dumps(globals()[what](**kwargs)))
 
 
 def dis_confirm():

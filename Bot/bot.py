@@ -240,9 +240,9 @@ def course(call):
     owner = course_.owner
 
     if owner.id == call.message.chat.id:  # owner
-        if (course_.entry_restriction is not None) and (time.time() < float(course_.entry_restriction)):
-            lock = 'открыта'
-        else:
+        lock = 'открыта'
+        end_entry = course_.entry_restriction
+        if (end_entry is not None) and (time.time() > float(end_entry)):
             lock = 'закрыта'
         desc = course_.description
         if len(desc) > cfg.course_info_desc_length:
@@ -255,7 +255,7 @@ def course(call):
         text = cfg.messages['course'].format(name=course_.name, fio=owner.name, num=num_par,
                                              mail='', marks='', attend=''
                                              )
-        c_text = 'покинуть курс *{}*'
+        c_text = 'покинуть курс *{}*'.format(course_.name)
         markup = ui.create_markup(
             [cbt.confirm_leave(course_.id, c_text, call.message.chat.id, call.message.message_id)]
         )
@@ -264,10 +264,14 @@ def course(call):
                               reply_markup=markup
                               )
     else:  # not enrolled
-        locked = '*Запись на курс окончена*' if float(course_.entry_restriction) < time.time() else ''
+        locked = ''
+        end_entry = course_.entry_restriction
+        if (end_entry is not None) and (time.time() > float(end_entry)):
+            locked = '*Запись на курс окончена*'
+        lock = ui.to_dtime(end_entry) if end_entry else 'отсутствует'
         text = cfg.messages['course_not_enroll'].format(name=course_.name, fio=owner.name,
                                                         desc=course_.description, num=num_par,
-                                                        lock=ui.to_dtime(course_.entry_restriction),
+                                                        lock=lock,
                                                         mail='', locked=locked
                                                         )  # TODO mail
         c_text = 'записаться на курс *{}*'.format(course_.name)
@@ -311,10 +315,12 @@ def leave(call):
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'confirm')
-def confirm(call):  # TODO сделать универсальной (290, вызов по 'what')
+def confirm(call):
     call.data = json.loads(call.data)
 
-    markup = ui.create_markup([cbt.confirm(cbt.enroll(call.data['course_id'])), cbt.dis_confirm()], include_back=False)
+    what_data = call.data.copy()
+    what_data.pop('goto'), what_data.pop('what')
+    markup = ui.create_markup([cbt.confirm(call.data['what'], **what_data), cbt.dis_confirm()], include_back=False)
     try:
         text = get_confirm_message(call.message.chat.id, call.message.message_id)
     except FileNotFoundError as ex:
