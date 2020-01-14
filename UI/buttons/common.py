@@ -4,6 +4,7 @@ from json import dumps, loads
 
 from telebot.types import InlineKeyboardButton
 
+import UI.buttons.confirm
 from Bot.util import save_confirm_message
 from Models import Course
 
@@ -42,6 +43,22 @@ def paging_backward(data_func, *args):
     return InlineKeyboardButton(text, callback_data=dumps(goto_data))
 
 
+def confirm(what, **kwargs):
+    """
+    Создаёт кнопку положительного подтверждения дейтсвия, которая вернёт само действие.
+
+    :param what: str. Название действия; должно совпадать с именем функции из этого модуля.
+    :param kwargs: Аргументы вызываемой функции.
+    :return: InlineKeyboardButton.
+    """
+
+    return InlineKeyboardButton('Да', callback_data=dumps(getattr(UI.buttons.confirm, what)(**kwargs)))
+
+
+def dis_confirm():
+    return InlineKeyboardButton('Нет', callback_data=dumps(dict(goto='no')))
+
+
 def course_list_of(what, page=0):
     return InlineKeyboardButton(
         'Все курсы' if what == 'all' else 'Мои курсы',
@@ -76,36 +93,12 @@ def confirm_enroll(course_id, confirm_text, user_id, message_id):
     )
 
 
-def enroll(course_id):
-    return dict(goto='enroll', course_id=course_id)
-
-
-def confirm(what, **kwargs):
-    """
-    Создаёт кнопку положительного подтверждения дейтсвия, которая вернёт само действие.
-
-    :param what: str. Название действия; должно совпадать с именем функции из этого модуля.
-    :param kwargs: Аргументы вызываемой функции.
-    :return: InlineKeyboardButton.
-    """
-
-    return InlineKeyboardButton('Да', callback_data=dumps(globals()[what](**kwargs)))
-
-
-def dis_confirm():
-    return InlineKeyboardButton('Нет', callback_data=dumps(dict(goto='no')))
-
-
 def confirm_leave(course_id, confirm_text, user_id, message_id):
     save_confirm_message(confirm_text, user_id, message_id)
     return InlineKeyboardButton(
         'Покинуть курс',
         callback_data=dumps(dict(goto='confirm', what='leave', course_id=course_id))
     )
-
-
-def leave(course_id):
-    return dict(goto='leave', course_id=course_id)
 
 
 ####################################################
