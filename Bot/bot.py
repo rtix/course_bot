@@ -239,7 +239,7 @@ def course(call):
     num_par = len(course_.participants)
     owner = course_.owner
 
-    if owner.id == call.message.chat.id:
+    if owner.id == call.message.chat.id:  # owner
         if (course_.entry_restriction is not None) and (time.time() < float(course_.entry_restriction)):
             lock = 'открыта'
         else:
@@ -251,14 +251,19 @@ def course(call):
         bot.edit_message_text(text=text, chat_id=call.message.chat.id, message_id=call.message.message_id,
                               parse_mode='Markdown', reply_markup=ui.create_markup()
                               )
-    elif course_.id in (c.id for c in User.User(call.message.chat.id).participation):
+    elif course_.id in (c.id for c in User.User(call.message.chat.id).participation):  # enrolled
         text = cfg.messages['course'].format(name=course_.name, fio=owner.name, num=num_par,
                                              mail='', marks='', attend=''
                                              )
+        c_text = 'покинуть курс *{}*'
+        markup = ui.create_markup(
+            [cbt.confirm_leave(course_.id, c_text, call.message.chat.id, call.message.message_id)]
+        )
         bot.edit_message_text(text=text, chat_id=call.message.chat.id, message_id=call.message.message_id,
-                              parse_mode='Markdown', reply_markup=ui.create_markup()
+                              parse_mode='Markdown',
+                              reply_markup=markup
                               )
-    else:
+    else:  # not enrolled
         locked = '*Запись на курс окончена*' if float(course_.entry_restriction) < time.time() else ''
         text = cfg.messages['course_not_enroll'].format(name=course_.name, fio=owner.name,
                                                         desc=course_.description, num=num_par,
@@ -287,6 +292,20 @@ def enroll(call):
         bot.answer_callback_query(call.id, 'Вы записались на курс ' + c.name)
     else:
         bot.answer_callback_query(call.id, 'Вы уже записаны на этот курс!', show_alert=True)
+
+    force_back(call)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'leave')
+def leave(call):
+    call.data = json.loads(call.data)
+
+    if call.data['course_id'] in (c.id for c in User.User(call.message.chat.id).participation):
+        c = Course.Course(call.data['course_id'])
+        c.remove_student(call.message.chat.id)
+        bot.answer_callback_query(call.id, 'Вы покинули курс ' + c.name)
+    else:
+        bot.answer_callback_query(call.id, 'Вы не записаны на этот курс!', show_alert=True)
 
     force_back(call)
 

@@ -88,13 +88,19 @@ def dis_confirm():
     return InlineKeyboardButton('Нет', callback_data=dumps(dict(goto='no')))
 
 
-def leave(id, prev=None):
-    button = InlineKeyboardButton(
-        'Отписаться',
-        callback_data=dumps(dict(type='c_act', cmd='leave', id=id, prev=prev))
+def confirm_leave(course_id, confirm_text, user_id, message_id):
+    save_confirm_message(confirm_text, user_id, message_id)
+    return InlineKeyboardButton(
+        'Покинуть курс',
+        callback_data=dumps(dict(goto='confirm', what='leave', course_id=course_id))
     )
 
-    return button
+
+def leave(course_id):
+    return dict(goto='leave', course_id=course_id)
+
+
+####################################################
 
 
 def show_mark(id_course, prev='menu', page=0):
