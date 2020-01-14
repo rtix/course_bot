@@ -240,7 +240,10 @@ def course(call):
     owner = course_.owner
 
     if owner.id == call.message.chat.id:
-        lock = 'открыта' if time.time() < float(course_.entry_restriction) else 'закрыта'
+        if (course_.entry_restriction is not None) and (time.time() < float(course_.entry_restriction)):
+            lock = 'открыта'
+        else:
+            lock = 'закрыта'
         desc = course_.description
         if len(desc) > cfg.course_info_desc_length:
             desc = desc[:cfg.course_info_desc_length] + '...'
@@ -256,14 +259,19 @@ def course(call):
                               parse_mode='Markdown', reply_markup=ui.create_markup()
                               )
     else:
+        locked = '*Запись на курс окончена*' if float(course_.entry_restriction) < time.time() else ''
         text = cfg.messages['course_not_enroll'].format(name=course_.name, fio=owner.name,
                                                         desc=course_.description, num=num_par,
-                                                        lock=ui.to_dtime(course_.entry_restriction), mail=''
+                                                        lock=ui.to_dtime(course_.entry_restriction),
+                                                        mail='', locked=locked
                                                         )  # TODO mail
         c_text = 'записаться на курс *{}*'.format(course_.name)
-        markup = ui.create_markup(
-            [cbt.confirm_enroll(course_.id, c_text, call.message.chat.id, call.message.message_id)]
-        )
+        if locked:
+            markup = ui.create_markup()
+        else:
+            markup = ui.create_markup(
+                [cbt.confirm_enroll(course_.id, c_text, call.message.chat.id, call.message.message_id)]
+            )
         bot.edit_message_text(text=text, chat_id=call.message.chat.id, message_id=call.message.message_id,
                               parse_mode='Markdown', reply_markup=markup
                               )
