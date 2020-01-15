@@ -4,9 +4,9 @@ from json import dumps, loads
 
 from telebot.types import InlineKeyboardButton
 
-import UI.buttons.confirm
 from Bot.util import save_confirm_message
 from Models import Course
+from UI import buttons
 
 
 def back():
@@ -52,7 +52,7 @@ def confirm(what, **kwargs):
     :return: InlineKeyboardButton.
     """
 
-    return InlineKeyboardButton('Да', callback_data=dumps(getattr(UI.buttons.confirm, what)(**kwargs)))
+    return InlineKeyboardButton('Да', callback_data=dumps(getattr(buttons.confirm, what)(**kwargs)))
 
 
 def dis_confirm():

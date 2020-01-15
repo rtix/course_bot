@@ -1,7 +1,7 @@
 import re
 
 from Bot.util import get_user_movement
-from UI.cfg import messages
+from UI.misc import messages
 
 
 class BotHelper:
