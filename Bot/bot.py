@@ -32,13 +32,8 @@ def force_back(call):
 def confirm(call):
     call.data = json.loads(call.data)
 
-    try:
-        text = get_confirm_message(call.message.chat.id, call.message.message_id)
-    except FileNotFoundError as ex:
-        print(ex)
-        bot.delete_message(call.message.chat.id, call.message.message_id)
-        botHelper.send_mes(misc.messages['bad_error'], call.message.chat.id)
-    else:
+    text = botHelper.get_from_disc(get_confirm_message, call=call)
+    if text:
         botHelper.edit_mes(text, call, markup=mkp.create_confirm(call.data))
 
 

@@ -27,7 +27,7 @@ class BotHelper:
             parse_mode='Markdown' if BotHelper.__markdown_regex.search(text) else None
         )
 
-    def del_mes(self, chat_id=None, message_id=None, call=None):
+    def del_mes(self, *, chat_id=None, message_id=None, call=None):
         if call:
             return self.__bot.delete_message(
                 chat_id=call.message.chat.id,
@@ -40,13 +40,31 @@ class BotHelper:
             )
 
     def get_back(self, call):
-        try:
-            call.data = get_user_movement(call.message.chat.id, call.message.message_id)
-        except FileNotFoundError as ex:
-            print(ex)
-            self.del_mes(call)
-            self.send_mes(messages['bad_error'], call.message.chat.id)
+        call.data = self.get_from_disc(get_user_movement, call=call)
+        return call.data if (call.data == 'menu') or (not call.data) else call.data['goto']
 
-            return 'menu'
+    def get_from_disc(self, util_func, *, chat_id=None, message_id=None, call=None):
+        try:
+            if call:
+                result = util_func(call.message.chat.id, call.message.message_id)
+            else:
+                result = util_func(chat_id, message_id)
+        except FileNotFoundError as ex:
+            if call:
+                self.error(ex, call=call)
+            else:
+                self.error(ex, chat_id=chat_id, message_id=message_id)
+
+            return None
         else:
-            return call.data if call.data == 'menu' else call.data['goto']
+            return result
+
+    def error(self, ex=None, *, chat_id=None, message_id=None, call=None):
+        if ex:
+            print(ex)
+        if call:
+            self.del_mes(call=call)
+            self.send_mes(messages['bad_error'], call.message.chat.id)
+        else:
+            self.del_mes(chat_id=chat_id, message_id=message_id)
+            self.send_mes(messages['bad_error'], chat_id)
