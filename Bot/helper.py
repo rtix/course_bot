@@ -1,4 +1,5 @@
 import re
+import traceback
 
 from Bot.util import get_user_movement
 from UI.misc import messages
@@ -62,6 +63,9 @@ class BotHelper:
     def error(self, ex=None, *, chat_id=None, message_id=None, call=None):
         if ex:
             print(ex)
+        else:
+            print(traceback.print_stack())
+
         if call:
             self.del_mes(call=call)
             self.send_mes(messages['bad_error'], call.message.chat.id)
