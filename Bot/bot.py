@@ -205,9 +205,15 @@ def course_list(call):
     if call.data['type'] == 'all':  # TODO не добавлять закрытые курсы
         courses = [i for i in Course.fetch_all_courses()]
         text = misc.messages['all']
-    else:
+    elif call.data['type'] == 'my':
         courses = [i for i in User.User(call.message.chat.id).participation]
         text = misc.messages['my']
+    elif call.data['type'] == 'teach':
+        courses = [i for i in User.User(call.message.chat.id).possessions]
+        text = misc.messages['teach']
+    else:
+        botHelper.error(call=call)
+        return
     page = call.data['page']
 
     p = ui.Paging(courses, sort_key='name')

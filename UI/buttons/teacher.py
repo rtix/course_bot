@@ -12,11 +12,14 @@ def new_course():
     return InlineKeyboardButton('Создать курс', callback_data=dumps(dict(goto='new_course')))
 
 
-# выводит управляемые курсы
-manage_list = InlineKeyboardButton(
-    'Управление курсами',
-    callback_data=dumps(dict(type='menu', cmd='teach_courses', page=0))
+def manage_list(page=0):
+    return InlineKeyboardButton(
+        'Управление курсами',
+        callback_data=dumps(dict(goto='course_list', type='teach', page=page))
     )
+
+
+#########################################################################
 
 
 def manage(id, prev=None):

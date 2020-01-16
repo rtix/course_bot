@@ -7,7 +7,7 @@ static_markups = {  # TODO dynamic markups
     'menu': markup.create([buttons.common.course_list_of('all'), buttons.common.course_list_of('my')],
                           include_back=False),
     'menu_teach': markup.create([buttons.common.course_list_of('all'), buttons.common.course_list_of('my')],
-                                [buttons.teacher.manage_list], [buttons.teacher.new_course()],
+                                [buttons.teacher.manage_list()], [buttons.teacher.new_course()],
                                 include_back=False
                                 )
 }
