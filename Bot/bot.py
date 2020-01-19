@@ -12,6 +12,7 @@ from UI import misc
 from UI import ui
 from UI.buttons import common as cbt
 from UI.buttons import teacher as tbt
+from UI.buttons.confirm import btn_text as btc_text
 
 
 def go():
@@ -255,7 +256,12 @@ def course(call):
         c_text = 'Вы уверены, что хотите покинуть курс *{}*?'.format(course_.name)
         if (end_entry is not None) and (time.time() > float(end_entry)):
             c_text += '\n*Запись на этот курс сейчас закрыта*. Возможно, вы не сможете больше записаться на него.'
-        markup = mkp.create([cbt.confirm_leave(course_.id, c_text, call.message.chat.id, call.message.message_id)])
+        markup = mkp.create([
+            cbt.confirm_action(
+                'leave', btc_text['leave'], c_text,
+                call.message.chat.id, call.message.message_id, course_id=course_.id
+            )
+        ])
 
         botHelper.edit_mes(text, call, markup=markup)
     else:  # not enrolled
@@ -272,9 +278,12 @@ def course(call):
         if locked:
             markup = mkp.create()
         else:
-            markup = mkp.create(
-                [cbt.confirm_enroll(course_.id, c_text, call.message.chat.id, call.message.message_id)]
-            )
+            markup = mkp.create([
+                cbt.confirm_action(
+                    'enroll', btc_text['enroll'], c_text,
+                    call.message.chat.id, call.message.message_id, course_id=course_.id
+                )
+            ])
 
         botHelper.edit_mes(text, call, markup=markup)
 

@@ -1,3 +1,9 @@
+btn_text = {
+    'leave': 'Покинуть',
+    'enroll': 'Записаться'
+}
+
+
 def enroll(course_id):
     return dict(goto='enroll', course_id=course_id)
 

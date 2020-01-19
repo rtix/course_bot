@@ -59,6 +59,26 @@ def dis_confirm():
     return InlineKeyboardButton('Нет', callback_data=dumps(dict(goto='no')))
 
 
+def confirm_action(action, button_text, confirm_text, user_id, message_id, **kwargs):
+    """
+    Создает кнопку, которая ведет к подтверждению действия.
+
+    :param button_text: str. Текст кнопки.
+    :param confirm_text: str. Текст кнопки.
+    :param action: str; function name. Название действия.
+    :param user_id: int. id пользователя.
+    :param message_id: int. id сообщения(меню).
+    :param kwargs: аргументы для дальнейшего действия при подтверждении.
+    :return: InlineKeyboardButton.
+    """
+
+    save_confirm_message(confirm_text, user_id, message_id)
+    return InlineKeyboardButton(
+        button_text,
+        callback_data=dumps(dict(goto='confirm', what=action, **kwargs))
+    )
+
+
 def course_list_of(what, page=0):
     return InlineKeyboardButton(
         'Все курсы' if what == 'all' else 'Мои курсы',
@@ -83,22 +103,6 @@ def courses(courses_list):
         arr.append(button)
 
     return arr
-
-
-def confirm_enroll(course_id, confirm_text, user_id, message_id):
-    save_confirm_message(confirm_text, user_id, message_id)
-    return InlineKeyboardButton(
-        'Записаться',
-        callback_data=dumps(dict(goto='confirm', what='enroll', course_id=course_id))
-    )
-
-
-def confirm_leave(course_id, confirm_text, user_id, message_id):
-    save_confirm_message(confirm_text, user_id, message_id)
-    return InlineKeyboardButton(
-        'Покинуть курс',
-        callback_data=dumps(dict(goto='confirm', what='leave', course_id=course_id))
-    )
 
 
 ####################################################
