@@ -1,6 +1,7 @@
 btn_text = {
     'leave': 'Покинуть',
-    'enroll': 'Записаться'
+    'enroll': 'Записаться',
+    'delete_course': 'Удалить курс'
 }
 
 

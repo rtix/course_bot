@@ -301,7 +301,12 @@ def course_owner(call):
     )
     c_text = 'удалить курс *{}*'.format(course_.name)
     markup = mkp.create(
-        [tbt.confirm_delete(call.data['course_id'], c_text, call.message.chat.id, call.message.message_id)]
+        [
+            cbt.confirm_action(
+                'delete_course', btc_text['delete_course'],
+                c_text, call.message.chat.id,
+                call.message.message_id, course_id=course_.id)
+        ]
     )
 
     botHelper.edit_mes(text, call, markup=markup)
