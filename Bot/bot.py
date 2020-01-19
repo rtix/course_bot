@@ -166,7 +166,7 @@ def start(message):
 def registration(message):
     def name(msg):
         if re.fullmatch(r"[a-zA-Zа-яА-Я]+ [a-zA-Zа-яА-Я ]+", msg.text):
-            User.User(id=message.chat.id, username=message.from_user.username, name=msg.text)
+            User.User(id=message.chat.id, name=msg.text, group=1, email='q')
 
             botHelper.send_mes('*---Регистрация пользователя завершена---*', message.chat.id)
             menu_command(msg)
