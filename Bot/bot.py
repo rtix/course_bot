@@ -11,6 +11,7 @@ from UI import markup as mkp
 from UI import misc
 from UI import ui
 from UI.buttons import common as cbt
+from UI.buttons import teacher as tbt
 
 
 def go():
@@ -218,9 +219,10 @@ def course_list(call):
 
     p = ui.Paging(courses, sort_key='name')
     text += p.msg(call.data['page'])
-    markup = mkp.create_listed(p.list(page), list_type=cbt.course_list_of,
-                               args=(call.data['type'], page), width=2
-                               )
+    if call.data['type'] == 'teach':
+        markup = mkp.create_listed(tbt.courses(p.list(page)), tbt.manage_list, 2, page)
+    else:
+        markup = mkp.create_listed(cbt.courses(p.list(page)), cbt.course_list_of, 2, call.data['type'], page)
     botHelper.edit_mes(text, call, markup=markup)
 
 
@@ -240,13 +242,15 @@ def course(call):
         if len(desc) > constants.COURSE_INFO_DESC_LENGTH:
             desc = desc[:constants.COURSE_INFO_DESC_LENGTH] + '...'
         text = misc.messages['course_owner_min'].format(name=course_.name, num=num_par, lock=lock, desc=desc)
-        botHelper.edit_mes(text, call, markup=mkp.create())
+
+        botHelper.edit_mes(text, call, markup=mkp.create([tbt.manage(call.data['course_id'])]))
     elif course_.id in (c.id for c in User.User(call.message.chat.id).participation):  # enrolled
         text = misc.messages['course'].format(name=course_.name, fio=owner.name, num=num_par,
                                               mail='', marks='', attend=''
                                               )
         c_text = 'покинуть курс *{}*'.format(course_.name)
         markup = mkp.create([cbt.confirm_leave(course_.id, c_text, call.message.chat.id, call.message.message_id)])
+
         botHelper.edit_mes(text, call, markup=markup)
     else:  # not enrolled
         locked = ''
@@ -266,7 +270,22 @@ def course(call):
             markup = mkp.create(
                 [cbt.confirm_enroll(course_.id, c_text, call.message.chat.id, call.message.message_id)]
             )
+
         botHelper.edit_mes(text, call, markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'course_owner')
+@kfubot_callback
+def course_owner(call):
+    course_ = Course.Course(call.data['course_id'])
+
+    text = misc.messages['course_owner_full'].format(
+        name=course_.name,
+        num=len(course_.participants),
+        lock=ui.to_dtime(course_.entry_restriction),
+        desc=course_.description
+    )
+    botHelper.edit_mes(text, call, markup=mkp.create())
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'enroll')

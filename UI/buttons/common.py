@@ -66,19 +66,19 @@ def course_list_of(what, page=0):
     )
 
 
-def course(course_ids):
+def courses(courses_list):
     """
-    Берет на вход список 'id' и создает список кнопок с айди курса.
+    Берет на вход список курсов и создает список кнопок с айди курса.
 
-    :param course_ids: list. Список айди курсов.
+    :param courses_list: iterable. Список айди курсов.
     :return: list of InlineKeyboardButton. Возвращает список кнопок с айди курсов.
     """
 
     arr = []
-    for id_ in course_ids:
+    for course in courses_list:
         button = InlineKeyboardButton(
-            Course.Course(id_).name,
-            callback_data=dumps(dict(goto='course', course_id=id_))
+            course.name,
+            callback_data=dumps(dict(goto='course', course_id=course.id))
         )
         arr.append(button)
 

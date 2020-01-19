@@ -19,16 +19,30 @@ def manage_list(page=0):
     )
 
 
-#########################################################################
+def courses(courses_list):
+    """
+    Берет на вход список курсов и создает список кнопок с айди курса.
 
+    :param courses_list: iterable. Список курсов.
+    :return: list of InlineKeyboardButton. Возвращает список кнопок с айди курсов.
+    """
 
-def manage(id, prev=None):
-    button = InlineKeyboardButton(
-        'Управление',
-        callback_data=dumps(dict(type='c_act', cmd='mng', id=id, prev=prev))
+    arr = []
+    for course in courses_list:
+        button = InlineKeyboardButton(
+            course.name,
+            callback_data=dumps(dict(goto='course_owner', course_id=course.id))
         )
+        arr.append(button)
 
-    return button
+    return arr
+
+
+def manage(course_id):
+    return InlineKeyboardButton('Управление', callback_data=dumps(dict(goto='course_owner', course_id=course_id)))
+
+
+#########################################################################
 
 
 def delete(id):

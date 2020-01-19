@@ -25,18 +25,18 @@ def create(*buttons, width=3, include_back=True):
     return markup
 
 
-def create_listed(list, *, list_type, args, width=3):
+def create_listed(list, list_type, width=3, *args):
     """
     Создает клавиатуру со списком, разделенный на страницы.
 
-    :param list: list of "list_type". Список перечисляемого
-    :param list_type: func from UI.buttons. Действие, которое будет выполнять кнопка списка
+    :param list: list of InlineKeyboardButton of list_type. Список перечисляемого
+    :param list_type: func from UI.buttons. Тип списка
     :param width: int. Кол-во кнопок на одной строке. По умолчанию 3
     :param args: list. Аргументы для функции "list_type"
     :return: InlineKeyboardMarkup. Возвращает разметку кнопок
     """
 
-    return create(*[[i] for i in cbt.course([i.id for i in list])],
+    return create(*[[i] for i in list],
                   [cbt.paging_backward(list_type, *args), cbt.paging_forward(list_type, *args)],
                   width=width
                   )
