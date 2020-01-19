@@ -229,16 +229,17 @@ def course_list(call):
     botHelper.edit_mes(text, call, markup=markup)
 
 
+# TODO check_lock method
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'course')
 @kfubot_callback
 def course(call):
     course_ = Course.Course(call.data['course_id'])
     num_par = len(course_.participants)
     owner = course_.owner
+    end_entry = course_.entry_restriction
 
     if owner.id == call.message.chat.id:  # owner
         lock = 'открыта'
-        end_entry = course_.entry_restriction
         if (end_entry is not None) and (time.time() > float(end_entry)):
             lock = 'закрыта'
         desc = course_.description
@@ -251,13 +252,14 @@ def course(call):
         text = misc.messages['course'].format(name=course_.name, fio=owner.name, num=num_par,
                                               mail='', marks='', attend=''
                                               )
-        c_text = 'покинуть курс *{}*'.format(course_.name)
+        c_text = 'Вы уверены, что хотите покинуть курс *{}*?'.format(course_.name)
+        if (end_entry is not None) and (time.time() > float(end_entry)):
+            c_text += '\n*Запись на этот курс сейчас закрыта*. Возможно, вы не сможете больше записаться на него.'
         markup = mkp.create([cbt.confirm_leave(course_.id, c_text, call.message.chat.id, call.message.message_id)])
 
         botHelper.edit_mes(text, call, markup=markup)
     else:  # not enrolled
         locked = ''
-        end_entry = course_.entry_restriction
         if (end_entry is not None) and (time.time() > float(end_entry)):
             locked = '*Запись на курс окончена*'
         lock = ui.to_dtime(end_entry) if end_entry else 'отсутствует'

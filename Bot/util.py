@@ -75,7 +75,7 @@ def save_confirm_message(text, user_id, message_id):
         os.mkdir(confirm_dir)
 
     with open(confirm_dir + str(message_id), 'w') as file:
-        file.write('Вы уверены, что хотите {}?'.format(text))
+        file.write(text)
 
 
 def get_confirm_message(user_id, message_id):
