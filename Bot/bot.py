@@ -3,7 +3,7 @@ import re
 import time
 
 from Bot import botHelper, bot
-from Bot.util import kfubot_callback, get_confirm_message, goto
+from Bot.util import kfubot_callback, get_confirm_message, goto, save_user_movement
 from Models import Course
 from Models import User
 from UI import constants
@@ -19,14 +19,17 @@ def go():
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'back')
-def back(call):
+def back(call, fake=False, x=1):
+    if fake:
+        save_user_movement(call.message.chat.id, call.message.message_id, dict())
+    for i in range(x - 1):
+        botHelper.get_back(call)
     globals()[botHelper.get_back(call)](call)
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'no')
-@kfubot_callback
 def force_back(call):
-    back(call)
+    back(call, True)
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'confirm')
@@ -285,7 +288,12 @@ def course_owner(call):
         lock=ui.to_dtime(course_.entry_restriction),
         desc=course_.description
     )
-    botHelper.edit_mes(text, call, markup=mkp.create())
+    c_text = 'удалить курс *{}*'.format(course_.name)
+    markup = mkp.create(
+        [tbt.confirm_delete(call.data['course_id'], c_text, call.message.chat.id, call.message.message_id)]
+    )
+
+    botHelper.edit_mes(text, call, markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'enroll')
@@ -299,7 +307,7 @@ def enroll(call):
     else:
         bot.answer_callback_query(call.id, 'Вы уже записаны на этот курс!', show_alert=True)
 
-    force_back(call)
+    back(call, True)
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'leave')
@@ -313,7 +321,21 @@ def leave(call):
     else:
         bot.answer_callback_query(call.id, 'Вы не записаны на этот курс!', show_alert=True)
 
-    force_back(call)
+    back(call, True)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'delete_course')
+def delete_course(call):
+    call.data = json.loads(call.data)
+    course_ = Course.Course(call.data['course_id'])
+
+    if call.message.chat.id == course_.owner.id:
+        course_.delete()
+        bot.answer_callback_query(call.id, 'Курс удален')
+    else:
+        bot.answer_callback_query(call.id, 'Вы не владелец этого курса!', show_alert=True)
+
+    back(call, True, 2)
 
 
 # DEBUG

@@ -4,6 +4,7 @@ from json import dumps
 
 from telebot.types import InlineKeyboardButton
 
+from Bot.util import save_confirm_message
 from Models import Course
 from Models import User
 
@@ -40,6 +41,14 @@ def courses(courses_list):
 
 def manage(course_id):
     return InlineKeyboardButton('Управление', callback_data=dumps(dict(goto='course_owner', course_id=course_id)))
+
+
+def confirm_delete(course_id, confirm_text, user_id, message_id):
+    save_confirm_message(confirm_text, user_id, message_id)
+    return InlineKeyboardButton(
+        'Удалить курс',
+        callback_data=dumps(dict(goto='confirm', what='delete_course', course_id=course_id))
+    )
 
 
 #########################################################################
