@@ -235,12 +235,9 @@ def course(call):
     course_ = Course.Course(call.data['course_id'])
     num_par = len(course_.participants)
     owner = course_.owner
-    end_entry = course_.entry_restriction
 
     if owner.id == call.message.chat.id:  # owner
-        lock = 'открыта'
-        if (end_entry is not None) and (time.time() > float(end_entry)):
-            lock = 'закрыта'
+        lock = 'открыта' if course_.is_open else 'закрыта'
         desc = course_.description
         if len(desc) > UI.constants.COURSE_INFO_DESC_LENGTH:
             desc = desc[:UI.constants.COURSE_INFO_DESC_LENGTH] + '...'
@@ -252,7 +249,7 @@ def course(call):
             name=course_.name, fio=owner.name, num=num_par, mail='', marks='', attend=''
         )
         c_text = 'Вы уверены, что хотите покинуть курс *{}*?'.format(course_.name)
-        if (end_entry is not None) and (time.time() > float(end_entry)):
+        if not course_.is_open:
             c_text += '\n*Запись на этот курс сейчас закрыта*. Возможно, вы не сможете больше записаться на него.'
         markup = mkp.create([
                 cbt.confirm_action(
@@ -263,9 +260,8 @@ def course(call):
 
         botHelper.edit_mes(text, call, markup=markup)
     else:  # not enrolled
-        locked = ''
-        if (end_entry is not None) and (time.time() > float(end_entry)):
-            locked = '*Запись на курс окончена*'
+        locked = '' if course_.is_open else '*Запись на курс окончена*'
+        end_entry = course_.entry_restriction
         lock = UI.to_dtime(end_entry) if end_entry else 'отсутствует'
         text = UI.messages['course_not_enroll'].format(
             name=course_.name, fio=owner.name, desc=course_.description, num=num_par, lock=lock, mail='', locked=locked
