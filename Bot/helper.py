@@ -1,8 +1,8 @@
 import re
 import traceback
 
-from Bot.util import get_user_movement
 from UI.misc import messages
+from Bot import util
 
 
 class BotHelper:
@@ -41,7 +41,7 @@ class BotHelper:
             )
 
     def get_back(self, call):
-        call.data = self.get_from_disc(get_user_movement, call=call)
+        call.data = self.get_from_disc(util.get_user_movement, call=call)
         return call.data if (call.data == 'menu') or (not call.data) else call.data['goto']
 
     def get_from_disc(self, util_func, *, chat_id=None, message_id=None, call=None):

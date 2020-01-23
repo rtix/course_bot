@@ -2,12 +2,13 @@ import configparser
 
 import telebot
 
-import Bot.config
-import Bot.helper
 import Models.Mail
+from . import helper
+from . import util
+from .config import *
 
 sets = configparser.ConfigParser()
-sets.read(Bot.config.ROOT_DIR + '/settings.cfg')
+sets.read(ROOT_DIR + '/settings.cfg')
 
 if not Models.Mail.check_valid(sets['mail']['email']):
     raise Models.Mail.WrongEMail("Неправильный email в файле настроек.")
@@ -21,4 +22,4 @@ if sets['optional']['proxy']:
 
 email = Models.Mail.Mail(sets['mail']['email'], sets['mail']['password'], sets['optional']['smtp_host'])
 
-botHelper = Bot.helper.BotHelper(bot)
+botHelper = helper.BotHelper(bot)

@@ -2,14 +2,12 @@ import json
 import re
 import time
 
+import UI
 from Bot import botHelper, bot
 from Bot.util import kfubot_callback, get_confirm_message, goto, save_user_movement
 from Models import Course
 from Models import User
-from UI import constants
 from UI import markup as mkp
-from UI import misc
-from UI import ui
 from UI.buttons import common as cbt
 from UI.buttons import teacher as tbt
 from UI.buttons.confirm import btn_text as btc_text
@@ -47,7 +45,7 @@ def create_course(chat_id):
         if course_info['lock'] is None:
             t = None
         else:
-            t = ui.to_dtime(course_info['lock'])
+            t = UI.to_dtime(course_info['lock'])
 
         if course_info['name'] and course_info['desc']:
             c = creating['valid']
@@ -58,13 +56,13 @@ def create_course(chat_id):
         else:
             c = creating['both']
 
-        text = misc.messages['new_course'].format(name=course_info['name'], desc=course_info['desc'], lock=t, create=c)
+        text = UI.messages['new_course'].format(name=course_info['name'], desc=course_info['desc'], lock=t, create=c)
         msg = botHelper.send_mes(text, chat_id)
         bot.register_next_step_handler(msg, get_user_command)
 
     def name(message):
         length = len(message.text)
-        if constants.COURSE_NAME_LENGTH_MIN <= length <= constants.COURSE_NAME_LENGTH_MAX:
+        if UI.constants.COURSE_NAME_LENGTH_MIN <= length <= UI.constants.COURSE_NAME_LENGTH_MAX:
             course_info['name'] = message.text
             idle()
         else:
@@ -74,7 +72,7 @@ def create_course(chat_id):
 
     def desc(message):
         length = len(message.text)
-        if constants.COURSE_DESC_LENGTH_MIN <= length <= constants.COURSE_DESC_LENGTH_MAX:
+        if UI.constants.COURSE_DESC_LENGTH_MIN <= length <= UI.constants.COURSE_DESC_LENGTH_MAX:
             course_info['desc'] = message.text
             idle()
         else:
@@ -97,12 +95,12 @@ def create_course(chat_id):
     def get_user_command(message):
         if message.text == '/name':
             text = 'Введите имя курса.\nМинимальная длина {} символов, максимальная {}.' \
-                .format(constants.COURSE_NAME_LENGTH_MIN, constants.COURSE_NAME_LENGTH_MAX)
+                .format(UI.constants.COURSE_NAME_LENGTH_MIN, UI.constants.COURSE_NAME_LENGTH_MAX)
             botHelper.send_mes(text, chat_id)
             bot.register_next_step_handler(message, name)
         elif message.text == '/desc':
             text = 'Введите описание курса.\nМинимальная длина {} символов, максимальная {}.' \
-                .format(constants.COURSE_DESC_LENGTH_MIN, constants.COURSE_DESC_LENGTH_MAX)
+                .format(UI.constants.COURSE_DESC_LENGTH_MIN, UI.constants.COURSE_DESC_LENGTH_MAX)
             botHelper.send_mes(text, chat_id)
             bot.register_next_step_handler(message, desc)
         elif message.text == '/lock':
@@ -149,7 +147,7 @@ def start(message):
             botHelper.send_mes('Необходимо корректное имя-отчество(фамилия). Повторите:', message.chat.id)
             bot.register_next_step_handler(message, name)
 
-    botHelper.send_mes(misc.messages['start'], message.chat.id)
+    botHelper.send_mes(UI.messages['start'], message.chat.id)
 
     if User.User(message.chat.id).type_u == 'unlogined':
         try:
@@ -182,20 +180,20 @@ def registration(message):
 @bot.message_handler(commands=['menu'])
 def menu_command(message):
     if User.User(message.chat.id).type_u == 'unlogined':
-        botHelper.send_mes(misc.messages['new_user'], message.chat.id)
+        botHelper.send_mes(UI.messages['new_user'], message.chat.id)
     else:
         if User.User(message.chat.id).type_u == 'student':
-            botHelper.send_mes(misc.messages['menu'], message.chat.id, markup=misc.static_markups['menu'])
+            botHelper.send_mes(UI.messages['menu'], message.chat.id, markup=UI.static_markups['menu'])
         else:
-            botHelper.send_mes(misc.messages['menu'], message.chat.id, markup=misc.static_markups['menu_teach'])
+            botHelper.send_mes(UI.messages['menu'], message.chat.id, markup=UI.static_markups['menu_teach'])
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'menu')
 def menu(call):
     if User.User(call.message.chat.id).type_u == 'student':
-        botHelper.edit_mes(misc.messages['menu'], call, markup=misc.static_markups['menu'])
+        botHelper.edit_mes(UI.messages['menu'], call, markup=UI.static_markups['menu'])
     else:
-        botHelper.edit_mes(misc.messages['menu'], call, markup=misc.static_markups['menu_teach'])
+        botHelper.edit_mes(UI.messages['menu'], call, markup=UI.static_markups['menu_teach'])
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'new_course')
@@ -209,19 +207,19 @@ def new_course(call):
 def course_list(call):
     if call.data['type'] == 'all':  # TODO не добавлять закрытые курсы
         courses = [i for i in Course.fetch_all_courses()]
-        text = misc.messages['all']
+        text = UI.messages['all']
     elif call.data['type'] == 'my':
         courses = [i for i in User.User(call.message.chat.id).participation]
-        text = misc.messages['my']
+        text = UI.messages['my']
     elif call.data['type'] == 'teach':
         courses = [i for i in User.User(call.message.chat.id).possessions]
-        text = misc.messages['teach']
+        text = UI.messages['teach']
     else:
         botHelper.error(call=call)
         return
     page = call.data['page']
 
-    p = ui.Paging(courses, sort_key='name')
+    p = UI.Paging(courses, sort_key='name')
     text += p.msg(call.data['page'])
     if call.data['type'] == 'teach':
         markup = mkp.create_listed(tbt.courses(p.list(page)), tbt.manage_list, 2, page)
@@ -244,23 +242,23 @@ def course(call):
         if (end_entry is not None) and (time.time() > float(end_entry)):
             lock = 'закрыта'
         desc = course_.description
-        if len(desc) > constants.COURSE_INFO_DESC_LENGTH:
-            desc = desc[:constants.COURSE_INFO_DESC_LENGTH] + '...'
-        text = misc.messages['course_owner_min'].format(name=course_.name, num=num_par, lock=lock, desc=desc)
+        if len(desc) > UI.constants.COURSE_INFO_DESC_LENGTH:
+            desc = desc[:UI.constants.COURSE_INFO_DESC_LENGTH] + '...'
+        text = UI.messages['course_owner_min'].format(name=course_.name, num=num_par, lock=lock, desc=desc)
 
         botHelper.edit_mes(text, call, markup=mkp.create([tbt.manage(call.data['course_id'])]))
     elif course_.id in (c.id for c in User.User(call.message.chat.id).participation):  # enrolled
-        text = misc.messages['course'].format(name=course_.name, fio=owner.name, num=num_par,
-                                              mail='', marks='', attend=''
-                                              )
+        text = UI.messages['course'].format(
+            name=course_.name, fio=owner.name, num=num_par, mail='', marks='', attend=''
+        )
         c_text = 'Вы уверены, что хотите покинуть курс *{}*?'.format(course_.name)
         if (end_entry is not None) and (time.time() > float(end_entry)):
             c_text += '\n*Запись на этот курс сейчас закрыта*. Возможно, вы не сможете больше записаться на него.'
         markup = mkp.create([
-            cbt.confirm_action(
-                'leave', btc_text['leave'], c_text,
-                call.message.chat.id, call.message.message_id, course_id=course_.id
-            )
+                cbt.confirm_action(
+                    'leave', btc_text['leave'], c_text,
+                    call.message.chat.id, call.message.message_id, course_id=course_.id
+                )
         ])
 
         botHelper.edit_mes(text, call, markup=markup)
@@ -268,12 +266,10 @@ def course(call):
         locked = ''
         if (end_entry is not None) and (time.time() > float(end_entry)):
             locked = '*Запись на курс окончена*'
-        lock = ui.to_dtime(end_entry) if end_entry else 'отсутствует'
-        text = misc.messages['course_not_enroll'].format(name=course_.name, fio=owner.name,
-                                                         desc=course_.description, num=num_par,
-                                                         lock=lock,
-                                                         mail='', locked=locked
-                                                         )  # TODO mail
+        lock = UI.to_dtime(end_entry) if end_entry else 'отсутствует'
+        text = UI.messages['course_not_enroll'].format(
+            name=course_.name, fio=owner.name, desc=course_.description, num=num_par, lock=lock, mail='', locked=locked
+        )  # TODO mail
         c_text = 'записаться на курс *{}*'.format(course_.name)
         if locked:
             markup = mkp.create()
@@ -293,21 +289,18 @@ def course(call):
 def course_owner(call):
     course_ = Course.Course(call.data['course_id'])
 
-    text = misc.messages['course_owner_full'].format(
-        name=course_.name,
-        num=len(course_.participants),
-        lock=ui.to_dtime(course_.entry_restriction),
-        desc=course_.description
+    text = UI.messages['course_owner_full'].format(
+        name=course_.name, num=len(course_.participants),
+        lock=UI.to_dtime(course_.entry_restriction), desc=course_.description
     )
     c_text = 'удалить курс *{}*'.format(course_.name)
-    markup = mkp.create(
-        [
+    markup = mkp.create([
             cbt.confirm_action(
-                'delete_course', btc_text['delete_course'],
-                c_text, call.message.chat.id,
-                call.message.message_id, course_id=course_.id)
-        ]
-    )
+                'delete_course', btc_text['delete_course'], c_text,
+                call.message.chat.id, call.message.message_id,
+                course_id=course_.id
+            )
+    ])
 
     botHelper.edit_mes(text, call, markup=markup)
 

@@ -1,5 +1,4 @@
 import operator
-import time
 
 
 class Paging:
@@ -45,7 +44,3 @@ class Paging:
             page = self.last_page
 
         return '\nСтраница {} из {}'.format(page + 1, self.last_page + 1)
-
-
-def to_dtime(utime):
-    return time.strftime("%d %b %Y", time.localtime(float(utime))) if utime else None

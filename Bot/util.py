@@ -2,7 +2,7 @@ import json
 import os
 import pickle
 
-from Bot.config import USER_MOVEMENT_DIR
+from .config import USER_MOVEMENT_DIR
 
 
 def save_user_movement(user_id, message_id, new_data):

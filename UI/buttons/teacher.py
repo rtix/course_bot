@@ -4,8 +4,7 @@ from json import dumps
 
 from telebot.types import InlineKeyboardButton
 
-from Models import Course
-from Models import User
+from Models import Course, User
 
 
 def new_course():
