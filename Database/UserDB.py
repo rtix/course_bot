@@ -1,3 +1,4 @@
+from Bot.config import DATABASE_PATH
 import sqlite3 as sql
 
 def get_user(user_id):
@@ -6,7 +7,7 @@ def get_user(user_id):
     :param id: id- идентификатор юзера
     :return: словарь всех данных
     '''
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("""Select* from User
                     where u_id=?""", [user_id])
@@ -25,7 +26,7 @@ def get_user_courses(user_id):
     :param user_id: user_id - номер(идентификатор) user`а
     :return: list номеров(идентификаторов) курсов, на которые записан данный user
     '''
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur=con.cursor()
     cur.execute("""Select id_course from User_course
                 where id_user=?""",[user_id])
@@ -53,7 +54,7 @@ def set_user(user_id,field,value):
     :param value: значение, которое записывается в field
     :return: здесь это не важно, поэтому я просто возвращаю user_id
     '''
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur=con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -75,7 +76,7 @@ def create_user(id,name,group,email,type_u):
     :param type_u:
     :return:
     """
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur=con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -84,7 +85,7 @@ def create_user(id,name,group,email,type_u):
     con.close()
     
 def get_teacher_courses(id_teacher):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur=con.cursor()
     cur.execute("""Select id from Course
                 where owner =?""",[id_teacher])
@@ -96,7 +97,7 @@ def get_teacher_courses(id_teacher):
     return a
 
 def create_teacher_invitation(username):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("""Select username from Teacher_invitation
                 where username=?""",[username])
@@ -109,7 +110,7 @@ def create_teacher_invitation(username):
         con.close()
 
 def delete_teacher_invitation(username):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("""Delete from Teacher_invitation
                 where username = ?""",[username])
@@ -117,7 +118,7 @@ def delete_teacher_invitation(username):
     con.close()
 
 def check_teacher_invitation(username):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("""Select username from Teacher_invitation
                 where username = ?""",[username])
@@ -128,7 +129,7 @@ def check_teacher_invitation(username):
         return True
         
 def fetch_all_users():
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("""Select u_id from User""")
     c=cur.fetchall()
@@ -141,7 +142,7 @@ def fetch_all_users():
         return []
 
 def fetch_all_teachers():
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     type='teacher'
     cur.execute("""Select u_id from User

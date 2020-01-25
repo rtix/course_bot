@@ -228,7 +228,6 @@ def course_list(call):
     botHelper.edit_mes(text, call, markup=markup)
 
 
-# TODO check_lock method
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'course')
 @kfubot_callback
 def course(call):

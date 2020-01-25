@@ -15,23 +15,21 @@ def save_user_movement(user_id, message_id, new_data):
     :param new_data: dict. Данные кнопки
     """
 
-    if not os.path.exists(USER_MOVEMENT_DIR):
-        os.mkdir(USER_MOVEMENT_DIR)
-    user_dir = USER_MOVEMENT_DIR + '/' + str(user_id) + '/'
-    if not os.path.exists(user_dir):
-        os.mkdir(user_dir)
-    path = user_dir + str(message_id)
-    data = []
+    move_dir = os.path.join(USER_MOVEMENT_DIR, str(user_id))
+    if not os.path.exists(move_dir):
+        os.makedirs(move_dir)
+    move_file = os.path.join(USER_MOVEMENT_DIR, str(user_id), str(message_id))
 
-    if os.path.exists(path):
-        with open(path, 'rb') as file:
+    data = []
+    if os.path.exists(move_file):
+        with open(move_file, 'rb') as file:
             data = pickle.load(file)
 
         if (new_data.get('page') is not None) and (len(data) > 0) and (data[-1].get('page') is not None):
             data.pop()
 
     data.append(new_data)
-    with open(path, 'wb') as file:
+    with open(move_file, 'wb') as file:
         pickle.dump(data, file)
 
 
@@ -44,11 +42,10 @@ def get_user_movement(user_id, message_id):
     :return: dict
     """
 
-    user_dir = USER_MOVEMENT_DIR + '/' + str(user_id) + '/'
-    path = user_dir + str(message_id)
+    move_file = os.path.join(USER_MOVEMENT_DIR, str(user_id), str(message_id))
 
-    if os.path.exists(path):
-        with open(path, 'rb') as file:
+    if os.path.exists(move_file):
+        with open(move_file, 'rb') as file:
             data = pickle.load(file)
     else:
         raise FileNotFoundError("Movement file: for user id: {}\nfor message id: {}".format(user_id, message_id))
@@ -58,44 +55,32 @@ def get_user_movement(user_id, message_id):
     except IndexError:
         prev = 'menu'
 
-    with open(path, 'wb') as file:
+    with open(move_file, 'wb') as file:
         pickle.dump(data, file)
 
     return prev
 
 
 def save_confirm_message(text, user_id, message_id):
-    if not os.path.exists(USER_MOVEMENT_DIR):
-        os.mkdir(USER_MOVEMENT_DIR)
-    user_dir = USER_MOVEMENT_DIR + '/' + str(user_id) + '/'
-    if not os.path.exists(user_dir):
-        os.mkdir(user_dir)
-    confirm_dir = user_dir + 'confirm/'
-    if not os.path.exists(confirm_dir):
-        os.mkdir(confirm_dir)
+    confirm_dir = os.path.join(USER_MOVEMENT_DIR, str(user_id), 'confirm')
 
-    with open(confirm_dir + str(message_id), 'w') as file:
+    if not os.path.exists(confirm_dir):
+        os.makedirs(confirm_dir)
+
+    with open(os.path.join(confirm_dir, str(message_id)), 'w') as file:
         file.write(text)
 
 
 def get_confirm_message(user_id, message_id):
-    if not os.path.exists(USER_MOVEMENT_DIR):
-        os.mkdir(USER_MOVEMENT_DIR)
-    user_dir = USER_MOVEMENT_DIR + '/' + str(user_id) + '/'
-    if not os.path.exists(user_dir):
-        os.mkdir(user_dir)
-    confirm_dir = user_dir + 'confirm/'
-    if not os.path.exists(confirm_dir):
-        os.mkdir(confirm_dir)
-    path = confirm_dir + str(message_id)
+    confirm_file = os.path.join(USER_MOVEMENT_DIR, str(user_id), 'confirm', str(message_id))
 
-    if os.path.exists(path):
-        with open(path, 'r') as file:
+    if os.path.exists(confirm_file):
+        with open(confirm_file, 'r') as file:
             text = file.read()
+        os.remove(confirm_file)
     else:
         raise FileNotFoundError("Confirm file: user id: {}\nfor message id: {}".format(user_id, message_id))
 
-    os.remove(path)
     return text
 
 

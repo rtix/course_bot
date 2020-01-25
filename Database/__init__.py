@@ -1,15 +1,12 @@
 from Database.CourseDB import *
 from Database.UserDB import *
 from Database.RegistrationDB import *
-from Bot.config import ROOT_DIR
+from Bot import sets
+from Bot.config import DATABASE_PATH
 import sqlite3
-import configparser
-
-sets = configparser.ConfigParser()
-sets.read(ROOT_DIR + '/settings.cfg')
 
 username = sets['default']['username']
-con = sqlite3.connect(ROOT_DIR + '/Database/DB_FOR_TBOT.db')
+con = sqlite3.connect(DATABASE_PATH)
 con.cursor().execute("""Create table if not exists User(
                 name text,
                 group_n text,
