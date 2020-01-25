@@ -61,6 +61,20 @@ def get_user_movement(user_id, message_id):
     return prev
 
 
+def move_menu_info(old, new, user_id):
+    move_dir = os.path.join(USER_MOVEMENT_DIR, str(user_id))
+    old_file = os.path.join(move_dir, str(old))
+    new_file = os.path.join(move_dir, str(new))
+
+    if os.path.exists(old_file):
+        if os.path.exists(new_file):
+            os.remove(new_file)
+
+        os.rename(old_file, new_file)
+    else:
+        raise FileNotFoundError("Movement file: for user id: {}\nfor message id: {}".format(user_id, old))
+
+
 def save_confirm_message(text, user_id, message_id):
     confirm_dir = os.path.join(USER_MOVEMENT_DIR, str(user_id), 'confirm')
 

@@ -279,6 +279,7 @@ def course_owner(call):
     )
     c_text = 'удалить курс *{}*'.format(course_.name)
     markup = mkp.create(
+        [tbt.announce(call.data['course_id'])],
         [tbt.switch_lock(call.data['course_id'], True if course_.is_open else False)],
         [cbt.confirm_action(
                 'delete_course', btc_text['delete_course'], c_text,
@@ -344,6 +345,53 @@ def switch_lock(call):
         bot.answer_callback_query(call.id, 'Запись на курс открыта')
 
     back(call, True)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'announce')
+def announce(call):
+    def return_to_menu():
+        new_mes = botHelper.send_mes('empty', call.message.chat.id)
+        botHelper.renew_menu(call, new_mes)
+        back(call, True)
+
+    def send():
+        course_ = Course.Course(call.data['course_id'])
+
+        for part in course_.participants:
+            botHelper.send_mes('Сообщение от преподавателя курса {}:'.format(course_.name), part.id)
+            botHelper.send_mes(announce_info['text'], part.id)
+            if announce_info['file']:
+                bot.send_document(part.id, announce_info['file'], caption=announce_info['file_caption'])
+
+        botHelper.send_mes('*---Уведомление отправлено---*', call.message.chat.id)
+        return_to_menu()
+
+    def get_file(message):
+        if message.document:
+            announce_info['file'] = message.document.file_id
+            announce_info['file_caption'] = message.caption
+
+        send()
+
+    def get_text(message):
+        announce_info['text'] = message.text
+
+        botHelper.send_mes(
+            'Если хотите прикрепить файлы к уведомлению, отправьте их (как документ).'
+            '\nИнача нажмите /no или отправьте любой текст.',
+            call.message.chat.id
+        )
+        bot.register_next_step_handler(message, get_file)
+
+    call.data = json.loads(call.data)
+    announce_info = {'text': '', 'file': None, 'file_caption': ''}
+
+    botHelper.edit_mes('*---Создание уведомления---*', call)
+    botHelper.send_mes(
+        'Введите текст уведомления.',
+        call.message.chat.id
+    )
+    bot.register_next_step_handler(call.message, get_text)
 
 
 # DEBUG

@@ -48,6 +48,13 @@ def switch_lock(course_id, lock):
     )
 
 
+def announce(course_id):
+    return InlineKeyboardButton(
+        'Отправить уведомление',
+        callback_data=dumps(dict(goto='announce', course_id=course_id))
+    )
+
+
 #########################################################################
 
 
@@ -287,15 +294,6 @@ def task_xl(course_id):
     button = InlineKeyboardButton(
         'Загрузить через .xl*',
         callback_data=dumps(dict(type='file', cmd='xl_t', id=course_id))
-        )
-
-    return button
-
-
-def announce(course_id):
-    button = InlineKeyboardButton(
-        'Сделать объявление',
-        callback_data=dumps(dict(type='managing', cmd='ance', id=course_id))
         )
 
     return button

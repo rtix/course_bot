@@ -49,6 +49,14 @@ class BotHelper:
         call.data = self.get_from_disc(util.get_user_movement, call=call)
         return call.data if (call.data == 'menu') or (not call.data) else call.data['goto']
 
+    def renew_menu(self, call, new_message):
+        try:
+            util.move_menu_info(call.message.message_id, new_message.message_id, call.message.chat.id)
+        except FileNotFoundError as ex:
+            self.error(ex, call=call)
+        else:
+            call.message = new_message
+
     @staticmethod
     def remove_danger(text, user_text=True):
         for s in BotHelper.__danger_symbols:
