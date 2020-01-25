@@ -138,43 +138,32 @@ def create_course(chat_id):
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    def name(msg):
-        if re.fullmatch(r"[a-zA-Zа-яА-Я]+ [a-zA-Zа-яА-Я ]+", msg.text):
-            teacher.name = msg.text
-            botHelper.send_mes('*---Регистрация преподавателя завершена---*', message.chat.id)
-            menu_command(msg)
-        else:
-            botHelper.send_mes('Необходимо корректное имя-отчество(фамилия). Повторите:', message.chat.id)
-            bot.register_next_step_handler(message, name)
-
     botHelper.send_mes(UI.messages['start'], message.chat.id)
-
-    if User.User(message.chat.id).type_u == 'unlogined':
-        try:
-            teacher = User.User(id=message.chat.id, username=message.from_user.username, name='noname')
-
-            botHelper.send_mes('*---Регистрация преподавателя---*', message.chat.id)
-            botHelper.send_mes('Введите ваше ФИО:', message.chat.id)
-            bot.register_next_step_handler(message, name)
-        except User.TeacherAccessDeniedError:
-            pass
 
 
 @bot.message_handler(commands=['registration'])
 def registration(message):
     def name(msg):
         if re.fullmatch(r"[a-zA-Zа-яА-Я]+ [a-zA-Zа-яА-Я ]+", msg.text):
-            User.User(id=message.chat.id, name=msg.text, group=1, email='q')
+            user.name = msg.text
 
-            botHelper.send_mes('*---Регистрация пользователя завершена---*', message.chat.id)
             menu_command(msg)
         else:
             botHelper.send_mes('Необходимо корректное имя-отчество(фамилия). Повторите:', message.chat.id)
             bot.register_next_step_handler(message, name)
 
-    botHelper.send_mes('*---Регистрация пользователя---*', message.chat.id)
-    botHelper.send_mes('Введите ваше ФИО:', message.chat.id)
-    bot.register_next_step_handler(message, name)
+    if User.User(message.chat.id).type_u == 'unlogined':
+        try:
+            user = User.User(id=message.chat.id, username=message.from_user.username, name='noname')
+            botHelper.send_mes('*---Регистрация преподавателя---*', message.chat.id)
+        except User.TeacherAccessDeniedError:
+            user = User.User(id=message.chat.id, name='noname', group='1', email='qwe@qwe.qwe')
+            botHelper.send_mes('*---Регистрация пользователя---*', message.chat.id)
+
+        botHelper.send_mes('Введите ваше ФИО:', message.chat.id)
+        bot.register_next_step_handler(message, name)
+    else:
+        botHelper.send_mes('Вы уже зарегистрированы.', message.chat.id)
 
 
 @bot.message_handler(commands=['menu'])
