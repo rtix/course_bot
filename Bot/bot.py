@@ -228,7 +228,7 @@ def course(call):
         lock = 'открыта' if course_.is_open else 'закрыта'
         desc = course_.description
         if len(desc) > UI.constants.COURSE_INFO_DESC_LENGTH:
-            desc = desc[:UI.constants.COURSE_INFO_DESC_LENGTH] + '...'
+            desc = botHelper.remove_danger(desc[:UI.constants.COURSE_INFO_DESC_LENGTH]) + '...'
         text = UI.messages['course_owner_min'].format(name=course_.name, num=num_par, lock=lock, desc=desc)
 
         botHelper.edit_mes(text, call, markup=mkp.create([tbt.manage(call.data['course_id'])]))
