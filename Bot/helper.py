@@ -12,33 +12,37 @@ class BotHelper:
         self.__bot = bot
         self.__markdown_regex = re.compile(r'\*.+?\*|_.+?_|`.+?`', re.IGNORECASE)
 
-    def send_mes(self, text, chat_id, *, markup=None):
+    def send_mes(self, text, chat_id, *, markup=None, **kwargs):
         return self.__bot.send_message(
             text=BotHelper.remove_danger(text, False),
             chat_id=chat_id,
             reply_markup=markup,
-            parse_mode='Markdown' if self.__markdown_regex.search(text) else None
+            parse_mode='Markdown' if self.__markdown_regex.search(text) else None,
+            **kwargs
         )
 
-    def edit_mes(self, text, call, *, markup=None):
+    def edit_mes(self, text, call, *, markup=None, **kwargs):
         return self.__bot.edit_message_text(
             text=BotHelper.remove_danger(text, False),
             chat_id=call.message.chat.id,
             message_id=call.message.message_id,
             reply_markup=markup,
-            parse_mode='Markdown' if self.__markdown_regex.search(text) else None
+            parse_mode='Markdown' if self.__markdown_regex.search(text) else None,
+            **kwargs
         )
 
-    def del_mes(self, *, chat_id=None, message_id=None, call=None):
+    def del_mes(self, *, chat_id=None, message_id=None, call=None, **kwargs):
         if call:
             return self.__bot.delete_message(
                 chat_id=call.message.chat.id,
-                message_id=call.message.message_id
+                message_id=call.message.message_id,
+                **kwargs
             )
         else:
             return self.__bot.delete_message(
                 chat_id=chat_id,
-                message_id=message_id
+                message_id=message_id,
+                **kwargs
             )
 
     def get_back(self, call):
