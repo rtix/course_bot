@@ -278,13 +278,14 @@ def course_owner(call):
         lock=UI.to_dtime(course_.entry_restriction), desc=course_.description
     )
     c_text = 'удалить курс *{}*'.format(course_.name)
-    markup = mkp.create([
-            cbt.confirm_action(
+    markup = mkp.create(
+        [tbt.switch_lock(call.data['course_id'], True if course_.is_open else False)],
+        [cbt.confirm_action(
                 'delete_course', btc_text['delete_course'], c_text,
                 call.message.chat.id, call.message.message_id,
                 course_id=course_.id
-            )
-    ])
+        )]
+    )
 
     botHelper.edit_mes(text, call, markup=markup)
 
@@ -329,6 +330,20 @@ def delete_course(call):
         bot.answer_callback_query(call.id, 'Вы не владелец этого курса!', show_alert=True)
 
     back(call, True, 2)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'switch_lock')
+def switch_lock(call):
+    call.data = json.loads(call.data)
+
+    if call.data['lock']:
+        Course.Course(call.data['course_id']).entry_restriction = time.time()
+        bot.answer_callback_query(call.id, 'Запись на курс закрыта')
+    else:
+        Course.Course(call.data['course_id']).entry_restriction = None
+        bot.answer_callback_query(call.id, 'Запись на курс открыта')
+
+    back(call, True)
 
 
 # DEBUG

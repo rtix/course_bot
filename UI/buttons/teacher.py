@@ -41,6 +41,13 @@ def manage(course_id):
     return InlineKeyboardButton('Управление', callback_data=dumps(dict(goto='course_owner', course_id=course_id)))
 
 
+def switch_lock(course_id, lock):
+    return InlineKeyboardButton(
+        'Закрыть запись' if lock else 'Открыть запись',
+        callback_data=dumps(dict(goto='switch_lock', course_id=course_id, lock=lock))
+    )
+
+
 #########################################################################
 
 
