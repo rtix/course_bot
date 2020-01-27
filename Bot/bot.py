@@ -17,6 +17,11 @@ def go():
     bot.polling(none_stop=True)
 
 
+@bot.callback_query_handler(func=lambda call: goto(call.data) is None)
+def error(call):
+    botHelper.error(call=call)
+
+
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'back')
 def back(call, fake=False, x=1):
     if fake:
@@ -31,7 +36,7 @@ def force_back(call):
     back(call, True)
 
 
-@bot.callback_query_handler(func=lambda call: goto(call.data) == 'confirm')
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'C')
 def confirm(call):
     call.data = json.loads(call.data)
 
@@ -220,7 +225,7 @@ def course_list(call):
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'course')
 @kfubot_callback
 def course(call):
-    course_ = Course.Course(call.data['course_id'])
+    course_ = Course.Course(call.data['c_id'])
     num_par = len(course_.participants)
     owner = course_.owner
 
@@ -231,18 +236,31 @@ def course(call):
             desc = botHelper.remove_danger(desc[:UI.constants.COURSE_INFO_DESC_LENGTH]) + '...'
         text = UI.messages['course_owner_min'].format(name=course_.name, num=num_par, lock=lock, desc=desc)
 
-        botHelper.edit_mes(text, call, markup=mkp.create([tbt.manage(call.data['course_id'])]))
+        botHelper.edit_mes(text, call, markup=mkp.create([tbt.manage(call.data['c_id'])]))
     elif course_.id in (c.id for c in User.User(call.message.chat.id).participation):  # enrolled
+        cws = course_.classworks
+        attend_text = ''
+        overall = len(cws)
+        if overall:
+            att = sum(map(lambda cw: cw.attendance(call.message.chat.id).value, cws))
+            attend_text = UI.messages['attendance'].format(
+                count=att,
+                overall=overall,
+                ratio=int(att / overall * 100)
+            )
+
         text = UI.messages['course'].format(
-            name=course_.name, fio=owner.name, num=num_par, mail='', marks='', attend=''
+            name=course_.name, fio=owner.name, num=num_par, mail='', marks='', attend=attend_text
         )
+
         c_text = 'Вы уверены, что хотите покинуть курс *{}*?'.format(course_.name)
         if not course_.is_open:
             c_text += '\n*Запись на этот курс сейчас закрыта*. Возможно, вы не сможете больше записаться на него.'
+
         markup = mkp.create([
                 cbt.confirm_action(
                     'leave', btc_text['leave'], c_text,
-                    call.message.chat.id, call.message.message_id, course_id=course_.id
+                    call.message.chat.id, call.message.message_id, c_id=course_.id
                 )
         ])
 
@@ -261,7 +279,7 @@ def course(call):
             markup = mkp.create([
                 cbt.confirm_action(
                     'enroll', btc_text['enroll'], c_text,
-                    call.message.chat.id, call.message.message_id, course_id=course_.id
+                    call.message.chat.id, call.message.message_id, c_id=course_.id
                 )
             ])
 
@@ -271,7 +289,7 @@ def course(call):
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'course_owner')
 @kfubot_callback
 def course_owner(call):
-    course_ = Course.Course(call.data['course_id'])
+    course_ = Course.Course(call.data['c_id'])
 
     text = UI.messages['course_owner_full'].format(
         name=course_.name, num=len(course_.participants),
@@ -279,14 +297,66 @@ def course_owner(call):
     )
     c_text = 'удалить курс *{}*'.format(course_.name)
     markup = mkp.create(
-        [tbt.announce(call.data['course_id'])],
-        [tbt.switch_lock(call.data['course_id'], True if course_.is_open else False)],
+        [tbt.classwork_list(call.data['c_id'])],
+        [tbt.announce(call.data['c_id'])],
+        [tbt.switch_lock(call.data['c_id'], True if course_.is_open else False)],
         [cbt.confirm_action(
                 'delete_course', btc_text['delete_course'], c_text,
                 call.message.chat.id, call.message.message_id,
-                course_id=course_.id
+                c_id=course_.id
         )]
     )
+
+    botHelper.edit_mes(text, call, markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'class_list')
+@kfubot_callback
+def class_list(call):
+    classworks = Course.Course(call.data['c_id']).classworks
+
+    p = UI.Paging(classworks, sort_key='date')
+
+    text = 'Список классных уроков' + p.msg(call.data['page'])
+
+    markup = mkp.create_listed(
+        tbt.classworks(p.list(call.data['page'])),
+        tbt.classwork_list,
+        2,
+        call.data['c_id'], call.data['page']
+    )
+    mkp.add_before_back(markup, tbt.new_classwork(call.data['c_id']))
+
+    botHelper.edit_mes(text, call, markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'cw')
+@kfubot_callback
+def cw(call):
+    course_ = Course.Course(call.data['c_id'])
+    classwork = course_.classwork(call.data['cw_id'])
+
+    p = UI.Paging(course_.participants, sort_key='name')
+
+    text = UI.messages['classwork'].format(date=classwork.date) + p.msg(call.data['page'])
+
+    c_text = 'Вы уверены, что хотите удалить задание *{}*?'.format(classwork.name)
+
+    markup = mkp.create_listed(
+        tbt.user_attendance_list(p.list(call.data['page']), call.data['c_id'], call.data['cw_id']),
+        tbt.classwork,
+        2,
+        call.data['c_id'], call.data['cw_id'], call.data['page']
+    )
+    mkp.add_before_back(markup, tbt.invert_attendance(call.data['c_id'], call.data['cw_id']))
+    mkp.add_before_back(markup, cbt.confirm_action(
+        'del_class',
+        btc_text['del_class'],
+        c_text,
+        call.message.chat.id,
+        call.message.message_id,
+        c_id=call.data['c_id'], cw_id=call.data['cw_id']
+    ))
 
     botHelper.edit_mes(text, call, markup=markup)
 
@@ -295,8 +365,8 @@ def course_owner(call):
 def enroll(call):
     call.data = json.loads(call.data)
 
-    if call.data['course_id'] not in (c.id for c in User.User(call.message.chat.id).participation):
-        c = Course.Course(call.data['course_id'])
+    if call.data['c_id'] not in (c.id for c in User.User(call.message.chat.id).participation):
+        c = Course.Course(call.data['c_id'])
         c.append_student(call.message.chat.id)
         bot.answer_callback_query(call.id, 'Вы записались на курс ' + c.name)
     else:
@@ -309,8 +379,8 @@ def enroll(call):
 def leave(call):
     call.data = json.loads(call.data)
 
-    if call.data['course_id'] in (c.id for c in User.User(call.message.chat.id).participation):
-        c = Course.Course(call.data['course_id'])
+    if call.data['c_id'] in (c.id for c in User.User(call.message.chat.id).participation):
+        c = Course.Course(call.data['c_id'])
         c.remove_student(call.message.chat.id)
         bot.answer_callback_query(call.id, 'Вы покинули курс ' + c.name)
     else:
@@ -322,7 +392,7 @@ def leave(call):
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'delete_course')
 def delete_course(call):
     call.data = json.loads(call.data)
-    course_ = Course.Course(call.data['course_id'])
+    course_ = Course.Course(call.data['c_id'])
 
     if call.message.chat.id == course_.owner.id:
         course_.delete()
@@ -338,10 +408,10 @@ def switch_lock(call):
     call.data = json.loads(call.data)
 
     if call.data['lock']:
-        Course.Course(call.data['course_id']).entry_restriction = time.time()
+        Course.Course(call.data['c_id']).entry_restriction = time.time()
         bot.answer_callback_query(call.id, 'Запись на курс закрыта')
     else:
-        Course.Course(call.data['course_id']).entry_restriction = None
+        Course.Course(call.data['c_id']).entry_restriction = None
         bot.answer_callback_query(call.id, 'Запись на курс открыта')
 
     back(call, True)
@@ -355,7 +425,7 @@ def announce(call):
         back(call, True)
 
     def send():
-        course_ = Course.Course(call.data['course_id'])
+        course_ = Course.Course(call.data['c_id'])
 
         for part in course_.participants:
             botHelper.send_mes('Сообщение от преподавателя курса {}:'.format(course_.name), part.id)
@@ -394,6 +464,46 @@ def announce(call):
     bot.register_next_step_handler(call.message, get_text)
 
 
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'new_class')
+def new_class(call):
+    call.data = json.loads(call.data)
+
+    d = UI.to_dtime(time.time())
+    cw_id = Course.Classwork(call.data['c_id'], name=d, date=d).number
+    for user in Course.Course(call.data['c_id']).participants:
+        Course.Attendance(call.data['c_id'], cw_id, user.id).value = 0
+
+    back(call, True)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'del_class')
+def del_class(call):
+    call.data = json.loads(call.data)
+
+    if call.message.chat.id == Course.Course(call.data['c_id']).owner.id:
+        Course.Classwork(call.data['c_id'], call.data['cw_id']).delete()
+        bot.answer_callback_query(call.id, 'Занятие удалено')
+    else:
+        bot.answer_callback_query(call.id, 'Этого занятия не существует!', show_alert=True)
+
+    back(call, True, 2)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'attend')
+def attend(call):
+    call.data = json.loads(call.data)
+
+    if bool(call.data.get('u_id')):
+        Course.Attendance(call.data['c_id'], call.data['cw_id'], call.data['u_id']).value = \
+            not Course.Attendance(call.data['c_id'], call.data['cw_id'], call.data['u_id']).value
+    else:
+        for user in Course.Course(call.data['c_id']).participants:
+            Course.Attendance(call.data['c_id'], call.data['cw_id'], user.id).value = \
+                not Course.Attendance(call.data['c_id'], call.data['cw_id'], user.id).value
+
+    back(call, True)
+
+
 # DEBUG
 @bot.message_handler(commands=['su_s'])
 def sus(message):
@@ -404,3 +514,5 @@ def sus(message):
 @bot.message_handler(commands=['su_t'])
 def sut(message):
     User.User(message.chat.id).type_u = 'teacher'
+
+# TODO проверки существования сущностей

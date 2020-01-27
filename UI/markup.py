@@ -52,5 +52,11 @@ def create_confirm(call_data):
     """
 
     tmp = call_data.copy()
-    tmp.pop('goto'), tmp.pop('what')
+    tmp.pop('G'), tmp.pop('what')
     return create([buttons.common.confirm(call_data['what'], **tmp), buttons.common.dis_confirm()], include_back=False)
+
+
+def add_before_back(markup, button):
+    markup.add(button)
+    markup.keyboard[-1], markup.keyboard[-2] = markup.keyboard[-2], markup.keyboard[-1]
+    return markup

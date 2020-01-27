@@ -8,13 +8,13 @@ from Models import Course, User
 
 
 def new_course():
-    return InlineKeyboardButton('Создать курс', callback_data=dumps(dict(goto='new_course')))
+    return InlineKeyboardButton('Создать курс', callback_data=dumps(dict(G='new_course')))
 
 
 def manage_list(page=0):
     return InlineKeyboardButton(
         'Управление курсами',
-        callback_data=dumps(dict(goto='course_list', type='teach', page=page))
+        callback_data=dumps(dict(G='course_list', type='teach', page=page))
     )
 
 
@@ -30,28 +30,80 @@ def courses(courses_list):
     for course in courses_list:
         button = InlineKeyboardButton(
             course.name,
-            callback_data=dumps(dict(goto='course_owner', course_id=course.id))
+            callback_data=dumps(dict(G='course_owner', c_id=course.id))
         )
         arr.append(button)
 
     return arr
 
 
-def manage(course_id):
-    return InlineKeyboardButton('Управление', callback_data=dumps(dict(goto='course_owner', course_id=course_id)))
+def manage(c_id):
+    return InlineKeyboardButton('Управление', callback_data=dumps(dict(G='course_owner', c_id=c_id)))
 
 
-def switch_lock(course_id, lock):
+def switch_lock(c_id, lock):
     return InlineKeyboardButton(
         'Закрыть запись' if lock else 'Открыть запись',
-        callback_data=dumps(dict(goto='switch_lock', course_id=course_id, lock=lock))
+        callback_data=dumps(dict(G='switch_lock', c_id=c_id, lock=lock))
     )
 
 
-def announce(course_id):
+def announce(c_id):
     return InlineKeyboardButton(
         'Отправить уведомление',
-        callback_data=dumps(dict(goto='announce', course_id=course_id))
+        callback_data=dumps(dict(G='announce', c_id=c_id))
+    )
+
+
+def classwork_list(c_id, page=0):
+    return InlineKeyboardButton(
+        'Посещаемость',
+        callback_data=dumps(dict(G='class_list', c_id=c_id, page=page))
+    )
+
+
+def classworks(classworks_list, page=0):
+    arr = []
+    for cw in classworks_list:
+        arr.append(classwork(cw.course_id, cw.number, page))
+
+    return arr
+
+
+def classwork(c_id, cw_id, page=0):
+    return InlineKeyboardButton(
+        Course.Classwork(c_id, cw_id).name,
+        callback_data=dumps(dict(G='cw', c_id=c_id, cw_id=cw_id, page=page))
+    )
+
+
+def new_classwork(c_id):
+    return InlineKeyboardButton('Добавить занятие', callback_data=dumps(dict(G='new_class', c_id=c_id)))
+
+
+def user_attendance_list(users_list, c_id, cw_id):
+    cw = Course.Classwork(c_id, cw_id)
+    arr = []
+    for usr in users_list:
+        arr.append(InlineKeyboardButton(
+            usr.name + ' #' if cw.attendance(usr.id).value else usr.name,
+            callback_data=dumps(dict(G='attend', u_id=usr.id, c_id=c_id, cw_id=cw_id))
+        ))
+
+    return arr
+
+
+def delete_classwork(c_id, cw_id):
+    return InlineKeyboardButton(
+        'Удалить занятие',
+        callback_data=dumps(dict(G='del_class', c_id=c_id, cw_id=cw_id))
+    )
+
+
+def invert_attendance(c_id, cw_id):
+    return InlineKeyboardButton(
+        'Инвертировать значения',
+        callback_data=dumps(dict(G='attend', c_id=c_id, cw_id=cw_id))
     )
 
 
@@ -110,15 +162,6 @@ def task_new(id_course):
     button = InlineKeyboardButton(
             "Новое задание",
             callback_data=dumps(dict(type='new_task', id=id_course))
-            )
-
-    return button
-
-
-def attendance(id):
-    button = InlineKeyboardButton(
-            'Посещаемость',
-            callback_data=dumps(dict(type='managing', cmd='attend', id=id))
             )
 
     return button
@@ -215,21 +258,6 @@ def mark_all(id_course, id_task):
     return button
 
 
-def class_list(class_ids, course_id, page=0):
-    arr = []
-
-    k = 1
-    for i in class_ids:
-        button = InlineKeyboardButton(
-            'Занятие ' + str(k),
-            callback_data=dumps(dict(type='classes', id=course_id, id_cl=i, page=page))
-            )
-        arr.append(button)
-        k += 1
-
-    return arr
-
-
 def class_csv(course_id):
     button = InlineKeyboardButton(
         'Загрузить через .csv',
@@ -270,15 +298,6 @@ def user_attendance(users, course_id, class_id):
         arr.append(button)
 
     return arr
-
-
-def invert_attendance(course_id, class_id):
-    button = InlineKeyboardButton(
-            'Инвертировать посещения',
-            callback_data=dumps(dict(type='sw_attend', id=course_id, id_cl=class_id))
-            )
-
-    return button
 
 
 def class_xl(course_id):

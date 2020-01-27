@@ -25,7 +25,7 @@ def save_user_movement(user_id, message_id, new_data):
         with open(move_file, 'rb') as file:
             data = pickle.load(file)
 
-        if (new_data.get('page') is not None) and (len(data) > 0) and (data[-1].get('page') is not None):
+        if data and new_data.get('G') == data[-1].get('G'):
             data.pop()
 
     data.append(new_data)
@@ -109,4 +109,4 @@ def kfubot_callback(func):
 
 
 def goto(data):
-    return json.loads(data)['goto']
+    return json.loads(data).get('G')

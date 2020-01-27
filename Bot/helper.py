@@ -47,7 +47,7 @@ class BotHelper:
 
     def get_back(self, call):
         call.data = self.get_from_disc(util.get_user_movement, call=call)
-        return call.data if (call.data == 'menu') or (not call.data) else call.data['goto']
+        return call.data if (call.data == 'menu') or (not call.data) else call.data['G']
 
     def renew_menu(self, call, new_message):
         try:

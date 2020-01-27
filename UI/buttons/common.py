@@ -10,7 +10,7 @@ from Models import Course
 
 
 def back():
-    return InlineKeyboardButton('Назад', callback_data=dumps(dict(goto='back')))
+    return InlineKeyboardButton('Назад', callback_data=dumps(dict(G='back')))
 
 
 def paging_forward(data_func, *args):
@@ -21,11 +21,11 @@ def paging_forward(data_func, *args):
     :return: InlineKeyboardButton
     """
 
-    goto_data = loads(data_func(*args).callback_data)
-    goto_data['page'] += 1
+    G_data = loads(data_func(*args).callback_data)
+    G_data['page'] += 1
     text = '>>'
 
-    return InlineKeyboardButton(text, callback_data=dumps(goto_data))
+    return InlineKeyboardButton(text, callback_data=dumps(G_data))
 
 
 def paging_backward(data_func, *args):
@@ -36,11 +36,11 @@ def paging_backward(data_func, *args):
     :return: InlineKeyboardButton
     """
 
-    goto_data = loads(data_func(*args).callback_data)
-    goto_data['page'] -= 1
+    G_data = loads(data_func(*args).callback_data)
+    G_data['page'] -= 1
     text = '<<'
 
-    return InlineKeyboardButton(text, callback_data=dumps(goto_data))
+    return InlineKeyboardButton(text, callback_data=dumps(G_data))
 
 
 def confirm(what, **kwargs):
@@ -56,7 +56,7 @@ def confirm(what, **kwargs):
 
 
 def dis_confirm():
-    return InlineKeyboardButton('Нет', callback_data=dumps(dict(goto='no')))
+    return InlineKeyboardButton('Нет', callback_data=dumps(dict(G='no')))
 
 
 def confirm_action(action, button_text, confirm_text, user_id, message_id, **kwargs):
@@ -75,14 +75,14 @@ def confirm_action(action, button_text, confirm_text, user_id, message_id, **kwa
     save_confirm_message(confirm_text, user_id, message_id)
     return InlineKeyboardButton(
         button_text,
-        callback_data=dumps(dict(goto='confirm', what=action, **kwargs))
+        callback_data=dumps(dict(G='C', what=action, **kwargs))
     )
 
 
 def course_list_of(what, page=0):
     return InlineKeyboardButton(
         'Все курсы' if what == 'all' else 'Мои курсы',
-        callback_data=dumps(dict(goto='course_list', type=what, page=page))
+        callback_data=dumps(dict(G='course_list', type=what, page=page))
     )
 
 
@@ -90,7 +90,7 @@ def courses(courses_list):
     """
     Берет на вход список курсов и создает список кнопок с айди курса.
 
-    :param courses_list: iterable. Список айди курсов.
+    :param courses_list: iterable. Список курсов.
     :return: list of InlineKeyboardButton. Возвращает список кнопок с айди курсов.
     """
 
@@ -98,7 +98,7 @@ def courses(courses_list):
     for course in courses_list:
         button = InlineKeyboardButton(
             course.name,
-            callback_data=dumps(dict(goto='course', course_id=course.id))
+            callback_data=dumps(dict(G='course', c_id=course.id))
         )
         arr.append(button)
 
