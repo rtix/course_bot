@@ -242,15 +242,23 @@ def course(call):
         attend_text = ''
         overall = len(cws)
         if overall:
-            att = sum(map(lambda cw: cw.attendance(call.message.chat.id).value, cws))
+            att = sum(map(lambda cw_: cw_.attendance(call.message.chat.id).value, cws))
             attend_text = UI.messages['attendance'].format(
                 count=att,
                 overall=overall,
                 ratio=int(att / overall * 100)
             )
 
+        tasks = course_.tasks
+        if tasks:
+            total_mark = sum(map(lambda task_: task_.mark(call.message.chat.id).value, tasks))
+            mean_mark = total_mark / len(tasks)
+            mark_text = 'Суммарный балл: {}\nСредний балл: {}'.format(total_mark, round(mean_mark, 2))
+        else:
+            mark_text = ''
+
         text = UI.messages['course'].format(
-            name=course_.name, fio=owner.name, num=num_par, mail='', marks='', attend=attend_text
+            name=course_.name, fio=owner.name, num=num_par, mail='', marks=mark_text, attend=attend_text
         )
 
         c_text = 'Вы уверены, что хотите покинуть курс *{}*?'.format(course_.name)
@@ -297,6 +305,7 @@ def course_owner(call):
     )
     c_text = 'удалить курс *{}*'.format(course_.name)
     markup = mkp.create(
+        [tbt.task_list(call.data['c_id'])],
         [tbt.classwork_list(call.data['c_id'])],
         [tbt.announce(call.data['c_id'])],
         [tbt.switch_lock(call.data['c_id'], True if course_.is_open else False)],
@@ -340,7 +349,7 @@ def cw(call):
 
     text = UI.messages['classwork'].format(date=classwork.date) + p.msg(call.data['page'])
 
-    c_text = 'Вы уверены, что хотите удалить задание *{}*?'.format(classwork.name)
+    c_text = 'Вы уверены, что хотите удалить занятие *{}*?'.format(classwork.name)
 
     markup = mkp.create_listed(
         tbt.user_attendance_list(p.list(call.data['page']), call.data['c_id'], call.data['cw_id']),
@@ -356,6 +365,56 @@ def cw(call):
         call.message.chat.id,
         call.message.message_id,
         c_id=call.data['c_id'], cw_id=call.data['cw_id']
+    ))
+
+    botHelper.edit_mes(text, call, markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'task_list')
+@kfubot_callback
+def task_list(call):
+    tasks = Course.Course(call.data['c_id']).tasks
+
+    p = UI.Paging(tasks, sort_key='name')
+
+    text = 'Список заданий' + p.msg(call.data['page'])
+
+    markup = mkp.create_listed(
+        tbt.tasks(p.list(call.data['page'])),
+        tbt.task_list,
+        2,
+        call.data['c_id'], call.data['page']
+    )
+    mkp.add_before_back(markup, tbt.new_task(call.data['c_id']))
+
+    botHelper.edit_mes(text, call, markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'task')
+@kfubot_callback
+def task(call):
+    course_ = Course.Course(call.data['c_id'])
+    task_ = course_.task(call.data['t_id'])
+
+    p = UI.Paging(course_.participants, sort_key='name')
+
+    text = UI.messages['task'].format(name=task_.name, hmark=int(task_.highest_mark)) + p.msg(call.data['page'])
+
+    c_text = 'Вы уверены, что хотите удалить задание *{}*?'.format(task_.name)
+
+    markup = mkp.create_listed(
+        tbt.user_tasks_list(p.list(call.data['page']), call.data['c_id'], call.data['t_id']),
+        tbt.task,
+        2,
+        call.data['c_id'], call.data['t_id'], call.data['page']
+    )
+    mkp.add_before_back(markup, cbt.confirm_action(
+        'del_task',
+        btc_text['del_task'],
+        c_text,
+        call.message.chat.id,
+        call.message.message_id,
+        c_id=call.data['c_id'], t_id=call.data['t_id']
     ))
 
     botHelper.edit_mes(text, call, markup=markup)
@@ -502,6 +561,150 @@ def attend(call):
                 not Course.Attendance(call.data['c_id'], call.data['cw_id'], user.id).value
 
     back(call, True)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'new_task')
+def new_task(call):
+    def return_to_menu():
+        new_mes = botHelper.send_mes('empty', call.message.chat.id)
+        botHelper.renew_menu(call, new_mes)
+        back(call, True)
+
+    def create():
+        name = task_info['name']
+        if not name:
+            name = 'Задание ' + str(len(Course.Course(call.data['c_id']).tasks) + 1)
+
+        Course.Task(
+            course_id=call.data['c_id'],
+            name=name,
+            description=task_info['desc'].format(task_info['hmark']),
+            highest_mark=task_info['hmark']
+        )
+
+        botHelper.send_mes('*---Задание создано---*', call.message.chat.id)
+        return_to_menu()
+
+    def get_hmark(message):
+        if message.text == '/exit':
+            botHelper.send_mes('*---Создание задания отменено---*', call.message.chat.id)
+            return_to_menu()
+        else:
+            if message.text != '0' and re.fullmatch(r'\d+', message.text):
+                task_info['hmark'] = int(message.text)
+
+                create()
+            else:
+                botHelper.send_mes(
+                    'Максимальный балл должен быть положительным целым числом.\n/exit чтобы отменить создание',
+                    call.message.chat.id
+                )
+                bot.register_next_step_handler(message, get_hmark)
+
+    def get_desc(message):
+        if message.text == '/exit':
+            botHelper.send_mes('*---Создание задания отменено---*', call.message.chat.id)
+            return_to_menu()
+        else:
+            if len(message.text) <= UI.constants.TASK_DESC_MAX_LENGTH:
+                if message.text != '/no':
+                    task_info['desc'] += message.text
+
+                botHelper.send_mes('Введите максимальный балл задания.', call.message.chat.id)
+                bot.register_next_step_handler(message, get_hmark)
+            else:
+                botHelper.send_mes(
+                    'Максимальная длина {} символов, попробуйте еще раз.\n/exit, чтобы отменить создание'.format(
+                        UI.constants.TASK_DESC_MAX_LENGTH
+                    ),
+                    call.message.chat.id
+                )
+                bot.register_next_step_handler(message, get_desc)
+
+    def get_name(message):
+        if message.text == '/exit':
+            botHelper.send_mes('*---Создание задания отменено---*', call.message.chat.id)
+            return_to_menu()
+        else:
+            if len(message.text) <= UI.constants.TASK_NAME_MAX_LENGTH:
+                if message.text != '/no':
+                    task_info['name'] = message.text
+
+                botHelper.send_mes(
+                    'Введите описание задания.\n/no чтобы использовать описание по умолчанию.',
+                    call.message.chat.id
+                )
+                bot.register_next_step_handler(message, get_desc)
+            else:
+                botHelper.send_mes(
+                    'Максимальная длина {} символов, попробуйте еще раз.\n/exit, чтобы отменить создание'.format(
+                        UI.constants.TASK_NAME_MAX_LENGTH
+                    ),
+                    call.message.chat.id
+                )
+                bot.register_next_step_handler(message, get_name)
+
+    call.data = json.loads(call.data)
+    task_info = {'name': '', 'desc': 'Максимальный балл: {}\n', 'hmark': 0}
+
+    botHelper.edit_mes('*---Создание задания---*', call)
+    botHelper.send_mes(
+        'Введите имя задания.\n/no чтобы использовать имя по умолчанию.',
+        call.message.chat.id
+    )
+    bot.register_next_step_handler(call.message, get_name)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'del_task')
+def del_task(call):
+    call.data = json.loads(call.data)
+
+    if call.message.chat.id == Course.Course(call.data['c_id']).owner.id:
+        Course.Task(call.data['c_id'], call.data['t_id']).delete()
+        bot.answer_callback_query(call.id, 'Занятие удалено')
+    else:
+        bot.answer_callback_query(call.id, 'Этого задания не существует!', show_alert=True)
+
+    back(call, True, 2)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'do_tsk')
+def do_tsk(call):
+    def return_to_menu():
+        new_mes = botHelper.send_mes('empty', call.message.chat.id)
+        botHelper.renew_menu(call, new_mes)
+        back(call, True)
+
+    def get_mark(message):
+        if message.text == '/exit':
+            return_to_menu()
+        elif message.text == '-1':
+            mark.value = None
+        elif re.fullmatch(r'\d+', message.text):
+            if int(message.text) <= task_.highest_mark:
+                mark.value = int(message.text)
+
+                return_to_menu()
+            else:
+                botHelper.send_mes('Оценка превышает максимум. Попробуйте еще раз.\n/exit чтобы отменить')
+                bot.register_next_step_handler(message, get_mark)
+        else:
+            botHelper.send_mes('Неверый ввод. Попробуйте еще раз.\n/exit чтобы отменить.')
+            bot.register_next_step_handler(message, get_mark)
+
+    call.data = json.loads(call.data)
+    task_ = Course.Task(call.data['c_id'], call.data['t_id'])
+    mark = Course.Mark(call.data['c_id'], call.data['t_id'], call.data['u_id'])
+
+    text = UI.messages['mark_one'].format(
+        task=task_.name,
+        user=User.User(call.data['u_id']).name,
+        mark=mark.value,
+        max=task_.highest_mark
+    )
+
+    botHelper.edit_mes(text, call)
+    bot.register_next_step_handler(call.message, get_mark)
 
 
 # DEBUG

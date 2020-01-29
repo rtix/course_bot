@@ -107,6 +107,50 @@ def invert_attendance(c_id, cw_id):
     )
 
 
+def task_list(c_id, page=0):
+    return InlineKeyboardButton(
+        'Задания',
+        callback_data=dumps(dict(G='task_list', c_id=c_id, page=page))
+    )
+
+
+def tasks(tasks_list, page=0):
+    arr = []
+    for tsk in tasks_list:
+        arr.append(task(tsk.course_id, tsk.number, page))
+
+    return arr
+
+
+def task(c_id, t_id, page=0):
+    return InlineKeyboardButton(
+        Course.Task(c_id, t_id).name,
+        callback_data=dumps(dict(G='task', c_id=c_id, t_id=t_id, page=page))
+    )
+
+
+def new_task(c_id):
+    return InlineKeyboardButton('Добавить задание', callback_data=dumps(dict(G='new_task', c_id=c_id)))
+
+
+def delete_task(c_id, t_id):
+    return InlineKeyboardButton(
+        'Удалить задание',
+        callback_data=dumps(dict(G='del_task', c_id=c_id, t_id=t_id))
+    )
+
+
+def user_tasks_list(users_list, c_id, t_id):
+    arr = []
+    for usr in users_list:
+        arr.append(InlineKeyboardButton(
+            usr.name,
+            callback_data=dumps(dict(G='do_tsk', u_id=usr.id, c_id=c_id, t_id=t_id))
+        ))
+
+    return arr
+
+
 #########################################################################
 
 
@@ -126,36 +170,6 @@ def participants(id, prev=None):
             )
 
     return button
-
-
-def tasks(id):
-    button = InlineKeyboardButton(
-            'Задания',
-            callback_data=dumps(dict(type='managing', cmd='task', id=id))
-            )
-
-    return button
-
-
-def task(id_tasks, id_course, back_page=0):
-    arr = []
-
-    students = Course.Course(id_course).participants
-
-    for i in id_tasks:
-        star = ''
-        for student in students:
-            if Course.Task(id_course, i).mark(student.id).value is None:
-                star = '*'
-                break
-
-        button = InlineKeyboardButton(
-                Course.Task(id_course, i).name + star,
-                callback_data=dumps(dict(type='task', id=id_course, id_t=i, page=back_page))
-                )
-        arr.append(button)
-
-    return arr
 
 
 def task_new(id_course):
