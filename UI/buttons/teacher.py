@@ -170,6 +170,10 @@ def kick_user(c_id, u_id):
     return InlineKeyboardButton('Отчислить', callback_data=dumps(dict(G='kick', c_id=c_id, u_id=u_id)))
 
 
+def change_cw_date(c_id, cw_id):
+    return InlineKeyboardButton('Изменить дату', callback_data=dumps(dict(G='cw_date', c_id=c_id, cw_id=cw_id)))
+
+
 #########################################################################
 
 

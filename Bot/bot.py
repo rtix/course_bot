@@ -1,3 +1,4 @@
+import datetime
 import json
 import re
 import time
@@ -359,6 +360,7 @@ def cw(call):
         call.data['c_id'], call.data['cw_id'], call.data['page']
     )
     mkp.add_before_back(markup, tbt.invert_attendance(call.data['c_id'], call.data['cw_id']))
+    mkp.add_before_back(markup, tbt.change_cw_date(call.data['c_id'], call.data['cw_id']))
     mkp.add_before_back(markup, cbt.confirm_action(
         'del_class',
         btc_text['del_class'],
@@ -789,6 +791,40 @@ def kick(call):
         bot.answer_callback_query(call.id, 'Вы не являетесь преподавателем', show_alert=True)
 
     back(call, True, 2)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'cw_date')
+def cw_date(call):
+    def return_to_menu():
+        new_mes = botHelper.send_mes('empty', call.message.chat.id)
+        botHelper.renew_menu(call, new_mes)
+        back(call, True)
+
+    def get_date(message):
+        if message.text == '/exit':
+            return_to_menu()
+        elif re.fullmatch(r'\d{1,2}\s\d{1,2}\s\d{1,2}', message.text):
+            in_date = message.text.split()
+            cw_ = Course.Classwork(call.data['c_id'], call.data['cw_id'])
+
+            try:
+                date = datetime.date(2000 + int(in_date[0]), int(in_date[1]), int(in_date[2])).strftime('%d %b %Y')
+            except ValueError:
+                botHelper.send_mes('Неверный ввод. Попробуйте еще раз', message.messasge_id)
+                bot.register_next_step_handler(message, get_date)
+            else:
+                cw_.date = date
+                cw_.name = date
+
+                return_to_menu()
+        else:
+            botHelper.send_mes('Неверный ввод. Попробуйте еще раз', message.messasge_id)
+            bot.register_next_step_handler(message, get_date)
+
+    call.data = json.loads(call.data)
+
+    botHelper.edit_mes('Введите дату в формате _dd mm yy_.', call)
+    bot.register_next_step_handler(call.message, get_date)
 
 
 # DEBUG
