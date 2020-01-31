@@ -3,6 +3,8 @@ import json
 import re
 import time
 
+from telebot.apihelper import ApiException as TBotApiException
+
 import UI
 from Bot import botHelper, bot
 from Bot.util import kfubot_callback, get_confirm_message, goto, save_user_movement
@@ -557,37 +559,41 @@ def announce(call):
         course_ = Course.Course(call.data['c_id'])
 
         for part in course_.participants:
-            botHelper.send_mes('Сообщение от преподавателя курса {}:'.format(course_.name), part.id)
-            botHelper.send_mes(announce_info['text'], part.id)
-            if announce_info['file']:
-                bot.send_document(part.id, announce_info['file'], caption=announce_info['file_caption'])
+            try:
+                botHelper.send_mes('Сообщение от преподавателя курса {}:'.format(course_.name), part.id)
+                botHelper.send_mes(announce_info['text'], part.id)
+                for file, caption in zip(announce_info['file'], announce_info['file_caption']):
+                    bot.send_document(part.id, file, caption=caption)
+            except TBotApiException:
+                continue
 
         botHelper.send_mes('*---Уведомление отправлено---*', call.message.chat.id)
         return_to_menu()
 
     def get_file(message):
         if message.document:
-            announce_info['file'] = message.document.file_id
-            announce_info['file_caption'] = message.caption
-
-        send()
+            announce_info['file'].append(message.document.file_id)
+            announce_info['file_caption'].append(message.caption)
+            bot.register_next_step_handler(message, get_file)
+        else:
+            send()
 
     def get_text(message):
         announce_info['text'] = message.text
 
         botHelper.send_mes(
-            'Если хотите прикрепить файлы к уведомлению, отправьте их (как документ).'
-            '\nИнача нажмите /no или отправьте любой текст.',
+            'Если хотите прикрепить файлы к уведомлению, отправьте их по одному (как документ).'
+            '\nИнача нажмите /send, чтобы отправить уведомление, или напишите любой текст.',
             call.message.chat.id
         )
         bot.register_next_step_handler(message, get_file)
 
     call.data = json.loads(call.data)
-    announce_info = {'text': '', 'file': None, 'file_caption': ''}
+    announce_info = {'text': '', 'file': [], 'file_caption': []}
 
     botHelper.edit_mes('*---Создание уведомления---*', call)
     botHelper.send_mes(
-        'Введите текст уведомления.',
+        'Введите текст уведомления.\n/exit чтобы отменить.',
         call.message.chat.id
     )
     bot.register_next_step_handler(call.message, get_text)
