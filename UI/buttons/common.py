@@ -105,6 +105,18 @@ def courses(courses_list):
     return arr
 
 
+def task_list(c_id, page=0):
+    return InlineKeyboardButton('Список заданий', callback_data=dumps(dict(G='st_task_list', c_id=c_id, page=page)))
+
+
+def tasks(tasks_list):
+    arr = []
+    for t in tasks_list:
+        arr.append(InlineKeyboardButton(t.name, callback_data=dumps(dict(G='st_tsk', c_id=t.course_id, t_id=t.number))))
+
+    return arr
+
+
 ####################################################
 
 
@@ -112,15 +124,6 @@ def show_mark(id_course, prev='menu', page=0):
     button = InlineKeyboardButton(
         'Успеваемость',
         callback_data=dumps(dict(type='perf', id=id_course, page=page, prev=prev))
-    )
-
-    return button
-
-
-def task_list(id_course, prev='menu', page=0):
-    button = InlineKeyboardButton(
-        'Список заданий',
-        callback_data=dumps(dict(type='task_s', id=id_course, page=page, prev=prev))
     )
 
     return button

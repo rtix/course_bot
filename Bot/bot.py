@@ -268,12 +268,17 @@ def course(call):
         if not course_.is_open:
             c_text += '\n*Запись на этот курс сейчас закрыта*. Возможно, вы не сможете больше записаться на него.'
 
-        markup = mkp.create([
-                cbt.confirm_action(
-                    'leave', btc_text['leave'], c_text,
-                    call.message.chat.id, call.message.message_id, c_id=course_.id
-                )
-        ])
+        markup = mkp.create(
+            [cbt.task_list(call.data['c_id'])],
+            [cbt.confirm_action(
+                'leave',
+                btc_text['leave'],
+                c_text,
+                call.message.chat.id,
+                call.message.message_id,
+                c_id=course_.id
+            )]
+        )
 
         botHelper.edit_mes(text, call, markup=markup)
     else:  # not enrolled
@@ -295,6 +300,32 @@ def course(call):
             ])
 
         botHelper.edit_mes(text, call, markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'st_task_list')
+@kfubot_callback
+def st_task_list(call):
+    p = UI.Paging(Course.Course(call.data['c_id']).tasks, sort_key='name')
+
+    text = 'Список заданий' + p.msg(call.data['page'])
+
+    markup = mkp.create_listed(cbt.tasks(p.list(call.data['page'])), cbt.task_list, 2, call.data['page'])
+
+    botHelper.edit_mes(text, call, markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'st_tsk')
+@kfubot_callback
+def st_tsk(call):
+    task_ = Course.Task(call.data['c_id'], call.data['t_id'])
+    text = UI.messages['student_task'].format(
+        name=task_.name,
+        desc=task_.description,
+        mark=task_.mark(call.message.chat.id).value,
+        hmark=int(task_.highest_mark)
+    )
+
+    botHelper.edit_mes(text, call, markup=mkp.create())
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'course_owner')
