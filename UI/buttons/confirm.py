@@ -3,7 +3,8 @@ btn_text = {
     'enroll': 'Записаться',
     'delete_course': 'Удалить курс',
     'del_class': 'Удалить занятие',
-    'del_task': 'Удалить задание'
+    'del_task': 'Удалить задание',
+    'kick': 'Отчислить'
 }
 
 
@@ -25,3 +26,7 @@ def del_class(c_id, cw_id):
 
 def del_task(c_id, t_id):
     return dict(G='del_task', c_id=c_id, t_id=t_id)
+
+
+def kick(c_id, u_id):
+    return dict(G='kick', c_id=c_id, u_id=u_id)

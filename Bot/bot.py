@@ -305,6 +305,7 @@ def course_owner(call):
     )
     c_text = 'удалить курс *{}*'.format(course_.name)
     markup = mkp.create(
+        [tbt.user_list(call.data['c_id'])],
         [tbt.task_list(call.data['c_id'])],
         [tbt.classwork_list(call.data['c_id'])],
         [tbt.announce(call.data['c_id'])],
@@ -416,6 +417,73 @@ def task(call):
         call.message.message_id,
         c_id=call.data['c_id'], t_id=call.data['t_id']
     ))
+
+    botHelper.edit_mes(text, call, markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'user_list')
+@kfubot_callback
+def user_list(call):
+    p = UI.Paging(Course.Course(call.data['c_id']).participants, sort_key='name')
+
+    text = 'Список участников' + p.msg(call.data['page'])
+
+    markup = mkp.create_listed(
+        tbt.users(p.list(call.data['page']), call.data['c_id']),
+        tbt.user_list,
+        2,
+        call.data['c_id'], call.data['page']
+    )
+
+    botHelper.edit_mes(text, call, markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'usr_mng')
+@kfubot_callback
+def usr_mng(call):
+    course_ = Course.Course(call.data['c_id'])
+    tasks = course_.tasks
+    user = User.User(call.data['u_id'])
+    cws = course_.classworks
+
+    if tasks:
+        total_mark = sum(filter(None, map(lambda x: x.mark(call.data['u_id']).value, tasks)))
+        mean_mark = total_mark / len(tasks)
+    else:
+        total_mark = None
+        mean_mark = None
+
+    if cws:
+        overall = len(cws)
+        att = sum(map(lambda cw_: cw_.attendance(call.data['u_id']).value, cws))
+    else:
+        overall = None
+        att = None
+
+    text = UI.messages['user'].format(
+        course=course_.name,
+        name=user.name,
+        email='',
+        mean=mean_mark,
+        total=total_mark,
+        attend=att,
+        attend_tot=overall
+    )
+
+    c_text = 'Вы уверены, что хотите отчислить *{}*?'.format(user.name)
+
+    markup = mkp.create(
+        [
+            cbt.confirm_action(
+                'kick',
+                btc_text['kick'],
+                c_text,
+                call.message.chat.id,
+                call.message.message_id,
+                c_id=call.data['c_id'], u_id=call.data['u_id']
+            )
+        ]
+    )
 
     botHelper.edit_mes(text, call, markup=markup)
 
@@ -705,6 +773,22 @@ def do_tsk(call):
 
     botHelper.edit_mes(text, call)
     bot.register_next_step_handler(call.message, get_mark)
+
+
+@bot.callback_query_handler(func=lambda call: goto(call.data) == 'kick')
+def kick(call):
+    call.data = json.loads(call.data)
+    course_ = Course.Course(call.data['c_id'])
+
+    if User.User(call.message.chat.id).type_u == 'teacher':
+        if course_.id in (c.id for c in User.User(call.data['u_id']).participation):
+            course_.remove_student(call.data['u_id'])
+        else:
+            bot.answer_callback_query(call.id, 'Этот студент не записан на этот курс!', show_alert=True)
+    else:
+        bot.answer_callback_query(call.id, 'Вы не являетесь преподавателем', show_alert=True)
+
+    back(call, True, 2)
 
 
 # DEBUG

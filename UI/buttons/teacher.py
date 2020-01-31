@@ -151,6 +151,25 @@ def user_tasks_list(users_list, c_id, t_id):
     return arr
 
 
+def user_list(c_id, page=0):
+    return InlineKeyboardButton('Участники', callback_data=dumps(dict(G='user_list', c_id=c_id, page=page)))
+
+
+def users(users_list, c_id):
+    arr = []
+    for usr in users_list:
+        arr.append(InlineKeyboardButton(
+            usr.name,
+            callback_data=dumps(dict(G='usr_mng', u_id=usr.id, c_id=c_id))
+        ))
+
+    return arr
+
+
+def kick_user(c_id, u_id):
+    return InlineKeyboardButton('Отчислить', callback_data=dumps(dict(G='kick', c_id=c_id, u_id=u_id)))
+
+
 #########################################################################
 
 
