@@ -4,10 +4,10 @@ import telebot
 
 sets = sys.modules['__main__'].sets
 
+from .config import *
 import Models.Mail
 from . import helper
 from . import util
-from .config import *
 
 if not Models.Mail.check_valid(sets['mail']['email']):
     raise Models.Mail.WrongEMail("Неправильный email в файле настроек.")

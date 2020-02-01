@@ -3,10 +3,11 @@ from telebot.types import InlineKeyboardMarkup
 from UI import buttons
 
 
-def create(*btns, width=3, include_back=True):
+def create(lang, *btns, width=3, include_back=True):
     """
     Создает разметку кнопок '*buttons' с шириной 'width'.
 
+    :param lang: str. Язык пользователя
     :param include_back: bool. Влияет на наличие кнопки "назад"
     :param btns: lists of InlineKeyboardMarkup. Списки из 'InlineKeyboardMarkup'.
                     При разделении списка выведет кнопки на разных строках.
@@ -20,40 +21,45 @@ def create(*btns, width=3, include_back=True):
     for btn in btns:
         markup.add(*btn)
     if include_back:
-        markup.add(buttons.common.back())
+        markup.add(buttons.common.back(lang))
 
     return markup
 
 
-def create_listed(lst, list_type, width=3, *args):
+def create_listed(lang, lst, list_type, *args):
     """
     Создает клавиатуру со списком, разделенный на страницы.
 
+    :param lang: str. Язык пользователя
     :param lst: list of InlineKeyboardButton of list_type. Список перечисляемого
     :param list_type: func from UI.buttons. Тип списка
-    :param width: int. Кол-во кнопок на одной строке. По умолчанию 3
     :param args: list. Аргументы для функции "list_type"
     :return: InlineKeyboardMarkup. Возвращает разметку кнопок
     """
 
     return create(
+        lang,
         *[[i] for i in lst],
-        [buttons.common.paging_backward(list_type, *args), buttons.common.paging_forward(list_type, *args)],
-        width=width
+        [buttons.common.paging_backward(list_type, *args), buttons.common.paging_forward(list_type, *args)]
     )
 
 
-def create_confirm(call_data):
+def create_confirm(lang, call_data):
     """
     Создает клавиатуру для подтверждения действия.
 
+    :param lang: str. Язык пользователя
     :param call_data: dict. Информация кнопки, которая будет использована в последующем действии.
     :return: InlineKeyboardMarkup.
     """
 
     tmp = call_data.copy()
     tmp.pop('G'), tmp.pop('what')
-    return create([buttons.common.confirm(call_data['what'], **tmp), buttons.common.dis_confirm()], include_back=False)
+    return create(
+        lang,
+        [buttons.common.confirm(call_data['what'], lang, **tmp), buttons.common.dis_confirm(lang)],
+        include_back=False
+    )
 
 
 def add_before_back(markup, button):

@@ -98,15 +98,28 @@ def get_confirm_message(user_id, message_id):
     return text
 
 
-def kfubot_callback(func):
+def action(func):
     def wrapper(call):
         if type(call.data) is str:
             call.data = json.loads(call.data)
         save_user_movement(call.message.chat.id, call.message.message_id, call.data)
-        func(call)
+        func(call, get_lang(call.message.chat.id))
+
+    return wrapper
+
+
+def quick_action(func):
+    def wrapper(call):
+        if type(call.data) is str:
+            call.data = json.loads(call.data)
+        func(call, get_lang(call.message.chat.id))
 
     return wrapper
 
 
 def goto(data):
     return json.loads(data).get('G')
+
+
+def get_lang(user_id):
+    return 'ru'

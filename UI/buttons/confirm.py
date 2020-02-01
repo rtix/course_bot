@@ -1,13 +1,3 @@
-btn_text = {
-    'leave': 'Покинуть',
-    'enroll': 'Записаться',
-    'delete_course': 'Удалить курс',
-    'del_class': 'Удалить занятие',
-    'del_task': 'Удалить задание',
-    'kick': 'Отчислить'
-}
-
-
 def enroll(c_id):
     return dict(G='enroll', c_id=c_id)
 

@@ -1,7 +1,7 @@
 import re
 import traceback
 
-from UI.misc import messages
+import UI.misc
 from Bot import util
 
 
@@ -92,7 +92,7 @@ class BotHelper:
 
         if call:
             self.del_mes(call=call)
-            self.send_mes(messages['bad_error'], call.message.chat.id)
+            self.send_mes(UI.misc.messages['bad_error'], call.message.chat.id)
         else:
             self.del_mes(chat_id=chat_id, message_id=message_id)
-            self.send_mes(messages['bad_error'], chat_id)
+            self.send_mes(UI.misc.messages['bad_error'], chat_id)

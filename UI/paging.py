@@ -1,5 +1,7 @@
 import operator
 
+from UI.misc import messages
+
 
 class Paging:
     def __init__(self, data, inpage=5, sort_key=''):
@@ -32,9 +34,10 @@ class Paging:
 
         return [i for i in self.arr[(page * self.inpage):((page + 1) * self.inpage)]]
 
-    def msg(self, page):
+    def msg(self, page, lang):
         """
         :param page: int. Текущая страница.
+        :param lang: str. Язык сообщения.
         :return: str. Строка вида "Страница 'page' из 'self.last_page'".
         """
 
@@ -43,4 +46,4 @@ class Paging:
         elif page > self.last_page:
             page = self.last_page
 
-        return '\nСтраница {} из {}'.format(page + 1, self.last_page + 1)
+        return messages[lang]['common']['paging'].format(page + 1, self.last_page + 1)

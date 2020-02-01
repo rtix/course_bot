@@ -5,12 +5,15 @@ from json import dumps, loads
 from telebot.types import InlineKeyboardButton
 
 import UI.buttons.confirm
+import UI.misc
 from Bot.util import save_confirm_message
-from Models import Course
 
 
-def back():
-    return InlineKeyboardButton('Назад', callback_data=dumps(dict(G='back')))
+def back(lang):
+    return InlineKeyboardButton(
+        UI.misc.messages[lang]['buttons']['common']['back'],
+        callback_data=dumps(dict(G='back'))
+    )
 
 
 def paging_forward(data_func, *args):
@@ -21,11 +24,11 @@ def paging_forward(data_func, *args):
     :return: InlineKeyboardButton
     """
 
-    G_data = loads(data_func(*args).callback_data)
-    G_data['page'] += 1
+    g_data = loads(data_func(*args).callback_data)
+    g_data['page'] += 1
     text = '>>'
 
-    return InlineKeyboardButton(text, callback_data=dumps(G_data))
+    return InlineKeyboardButton(text, callback_data=dumps(g_data))
 
 
 def paging_backward(data_func, *args):
@@ -36,27 +39,34 @@ def paging_backward(data_func, *args):
     :return: InlineKeyboardButton
     """
 
-    G_data = loads(data_func(*args).callback_data)
-    G_data['page'] -= 1
+    g_data = loads(data_func(*args).callback_data)
+    g_data['page'] -= 1
     text = '<<'
 
-    return InlineKeyboardButton(text, callback_data=dumps(G_data))
+    return InlineKeyboardButton(text, callback_data=dumps(g_data))
 
 
-def confirm(what, **kwargs):
+def confirm(what, lang, **kwargs):
     """
     Создаёт кнопку положительного подтверждения дейтсвия, которая вернёт само действие.
 
     :param what: str. Название действия; должно совпадать с именем функции из этого модуля.
+    :param lang: str. Язык пользователя.
     :param kwargs: Аргументы вызываемой функции.
     :return: InlineKeyboardButton.
     """
 
-    return InlineKeyboardButton('Да', callback_data=dumps(getattr(UI.buttons.confirm, what)(**kwargs)))
+    return InlineKeyboardButton(
+        UI.misc.messages[lang]['buttons']['common']['confirm'],
+        callback_data=dumps(getattr(UI.buttons.confirm, what)(**kwargs))
+    )
 
 
-def dis_confirm():
-    return InlineKeyboardButton('Нет', callback_data=dumps(dict(G='no')))
+def dis_confirm(lang):
+    return InlineKeyboardButton(
+        UI.misc.messages[lang]['buttons']['common']['dis_confirm'],
+        callback_data=dumps(dict(G='no'))
+    )
 
 
 def confirm_action(action, button_text, confirm_text, user_id, message_id, **kwargs):
@@ -79,9 +89,14 @@ def confirm_action(action, button_text, confirm_text, user_id, message_id, **kwa
     )
 
 
-def course_list_of(what, page=0):
+def course_list_of(what, lang, page=0):
+    if what == 'all':
+        text = UI.misc.messages[lang]['buttons']['common']['all']
+    else:
+        text = UI.misc.messages[lang]['buttons']['common']['my']
+
     return InlineKeyboardButton(
-        'Все курсы' if what == 'all' else 'Мои курсы',
+        text,
         callback_data=dumps(dict(G='course_list', type=what, page=page))
     )
 
@@ -105,39 +120,16 @@ def courses(courses_list):
     return arr
 
 
-def task_list(c_id, page=0):
-    return InlineKeyboardButton('Список заданий', callback_data=dumps(dict(G='st_task_list', c_id=c_id, page=page)))
+def task_list(c_id, lang, page=0):
+    return InlineKeyboardButton(
+        UI.misc.messages[lang]['buttons']['common']['task_list'],
+        callback_data=dumps(dict(G='st_task_list', c_id=c_id, page=page))
+    )
 
 
 def tasks(tasks_list):
     arr = []
     for t in tasks_list:
         arr.append(InlineKeyboardButton(t.name, callback_data=dumps(dict(G='st_tsk', c_id=t.course_id, t_id=t.number))))
-
-    return arr
-
-
-####################################################
-
-
-def show_mark(id_course, prev='menu', page=0):
-    button = InlineKeyboardButton(
-        'Успеваемость',
-        callback_data=dumps(dict(type='perf', id=id_course, page=page, prev=prev))
-    )
-
-    return button
-
-
-def task(id_tasks, id_course, id_user, back_page=0):
-    arr = []
-
-    for i in id_tasks:
-        task = Course.Task(id_course, i)
-        button = InlineKeyboardButton(
-            '{}  {}/{}'.format(task.name, task.mark(id_user).value, task.highest_mark),
-            callback_data=dumps(dict(type='task_u', id=id_course, id_t=i, page=back_page))
-        )
-        arr.append(button)
 
     return arr

@@ -7,13 +7,20 @@ from telebot.apihelper import ApiException as TBotApiException
 
 import UI
 from Bot import botHelper, bot
-from Bot.util import kfubot_callback, get_confirm_message, goto, save_user_movement
+from Bot.util import (
+    action,
+    get_confirm_message,
+    get_lang,
+    goto,
+    quick_action,
+    save_user_movement
+)
 from Models import Course
 from Models import User
 from UI import markup as mkp
+from UI import messages as msgs
 from UI.buttons import common as cbt
 from UI.buttons import teacher as tbt
-from UI.buttons.confirm import btn_text as btc_text
 
 
 def go():
@@ -45,7 +52,7 @@ def confirm(call):
 
     text = botHelper.get_from_disc(get_confirm_message, call=call)
     if text:
-        botHelper.edit_mes(text, call, markup=mkp.create_confirm(call.data))
+        botHelper.edit_mes(text, call, markup=mkp.create_confirm(get_lang(call.message.chat.id), call.data))
 
 
 def create_course(chat_id):
@@ -64,7 +71,10 @@ def create_course(chat_id):
         else:
             c = creating['both']
 
-        text = UI.messages['new_course'].format(name=course_info['name'], desc=course_info['desc'], lock=t, create=c)
+        text = msgs[get_lang(chat_id)]['teacher']['course_create']['new_course'].format(
+            name=course_info['name'], desc=course_info['desc'], lock=t, create=c
+        )
+
         msg = botHelper.send_mes(text, chat_id)
         bot.register_next_step_handler(msg, get_user_command)
 
@@ -74,7 +84,7 @@ def create_course(chat_id):
             course_info['name'] = message.text
             idle()
         else:
-            botHelper.send_mes('Неверная длина имени курса. Попробуйте еще раз.', chat_id)
+            botHelper.send_mes(msgs[lang]['teacher']['course_create']['error_name_length'], chat_id)
             message.text = '/name'
             get_user_command(message)
 
@@ -84,7 +94,7 @@ def create_course(chat_id):
             course_info['desc'] = message.text
             idle()
         else:
-            botHelper.send_mes('Неверная длина описания курса. Попробуйте еще раз.', chat_id)
+            botHelper.send_mes(msgs[lang]['teacher']['course_create']['error_desc_length'], chat_id)
             message.text = '/desc'
             get_user_command(message)
 
@@ -96,49 +106,56 @@ def create_course(chat_id):
             course_info['lock'] = time.time() + (int(message.text) * 24 * 60 * 60)
             idle()
         else:
-            botHelper.send_mes('Ошибочный ввод. Попробуйте еще раз.', chat_id)
+            botHelper.send_mes(msgs[lang]['common']['wrong_input'], chat_id)
             message.text = '/lock'
             get_user_command(message)
 
     def get_user_command(message):
         if message.text == '/name':
-            text = 'Введите имя курса.\nМинимальная длина {} символов, максимальная {}.' \
-                .format(UI.constants.COURSE_NAME_LENGTH_MIN, UI.constants.COURSE_NAME_LENGTH_MAX)
+            text = msgs[lang]['teacher']['course_create']['name_input'].format(
+                UI.constants.COURSE_NAME_LENGTH_MIN,
+                UI.constants.COURSE_NAME_LENGTH_MAX
+            )
+
             botHelper.send_mes(text, chat_id)
             bot.register_next_step_handler(message, name)
         elif message.text == '/desc':
-            text = 'Введите описание курса.\nМинимальная длина {} символов, максимальная {}.' \
-                .format(UI.constants.COURSE_DESC_LENGTH_MIN, UI.constants.COURSE_DESC_LENGTH_MAX)
+            text = msgs[lang]['teacher']['course_create']['desc_input'].format(
+                UI.constants.COURSE_DESC_LENGTH_MIN,
+                UI.constants.COURSE_DESC_LENGTH_MAX
+            )
+
             botHelper.send_mes(text, chat_id)
             bot.register_next_step_handler(message, desc)
         elif message.text == '/lock':
-            text = 'Введите, в течение скольки дней будет доступна запись на курс.\nЧтобы убрать закрытие введите 0.'
+            text = msgs[lang]['teacher']['course_create']['lock_input']
+
             botHelper.send_mes(text, chat_id)
             bot.register_next_step_handler(message, lock)
         elif message.text == '/create':
             if not course_info['name'] or not course_info['desc']:
-                botHelper.send_mes('Имя курса и описания обязательны для создания.', chat_id)
+                botHelper.send_mes(msgs[lang]['teacher']['course_create']['name_and_desc'], chat_id)
                 bot.register_next_step_handler(message, get_user_command)
             else:
                 c = Course.Course(owner_id=chat_id, name=course_info['name'])
                 c.description = course_info['desc']
                 c.entry_restriction = course_info['lock']
 
-                botHelper.send_mes('*---Создание курса завершено---*', chat_id)
+                botHelper.send_mes(msgs[lang]['teacher']['course_create']['created'], chat_id)
                 menu_command(message)
         elif message.text == '/exit':
-            botHelper.send_mes('*---Создание курса отменено---*', chat_id)
+            botHelper.send_mes(msgs[lang]['teacher']['course_create']['canceled'], chat_id)
             menu_command(message)
         else:
-            text = '*---Неверная команда. Попробуйте еще раз.\nexit чтобы выйти---*'
-            botHelper.send_mes(text, chat_id)
+            botHelper.send_mes(msgs[lang]['teacher']['course_create']['wrong_command'], chat_id)
             bot.register_next_step_handler(message, get_user_command)
 
+    lang = get_lang(chat_id)
     creating = {
-        'valid': '*Чтобы завершить создание /create.*',
-        'name': '*Необходимо заполнить имя курса /name.*',
-        'desc': '*Необходимо заполнить описание курса /desc.*',
-        'both': '*Необходимо заполнить имя и описание курса /name, /desc.*'
+        'valid': msgs[lang]['teacher']['course_create']['creating_valid'],
+        'name': msgs[lang]['teacher']['course_create']['creating_name'],
+        'desc': msgs[lang]['teacher']['course_create']['creating_desc'],
+        'both': msgs[lang]['teacher']['course_create']['creating_both']
     }
     course_info = dict(name=None, desc=None, lock=None)
     idle()
@@ -146,7 +163,7 @@ def create_course(chat_id):
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    botHelper.send_mes(UI.messages['start'], message.chat.id)
+    botHelper.send_mes(msgs[get_lang(message.chat.id)]['common']['start'], message.chat.id)
 
 
 @bot.message_handler(commands=['registration'])
@@ -157,96 +174,158 @@ def registration(message):
 
             menu_command(msg)
         else:
-            botHelper.send_mes('Необходимо корректное имя-отчество(фамилия). Повторите:', message.chat.id)
+            botHelper.send_mes(msgs[lang]['common']['registration']['wrong_name'], message.chat.id)
             bot.register_next_step_handler(message, name)
+
+    lang = get_lang(message.chat.id)
 
     if User.User(message.chat.id).type_u == 'unlogined':
         try:
             user = User.User(id=message.chat.id, username=message.from_user.username, name='noname')
-            botHelper.send_mes('*---Регистрация преподавателя---*', message.chat.id)
+            botHelper.send_mes(msgs[lang]['common']['registration']['teacher'], message.chat.id)
         except User.TeacherAccessDeniedError:
             user = User.User(id=message.chat.id, name='noname', group='1', email='qwe@qwe.qwe')
-            botHelper.send_mes('*---Регистрация пользователя---*', message.chat.id)
+            botHelper.send_mes(msgs[lang]['common']['registration']['mere_human'], message.chat.id)
 
-        botHelper.send_mes('Введите ваше ФИО:', message.chat.id)
+        botHelper.send_mes(msgs[lang]['common']['registration']['input'], message.chat.id)
         bot.register_next_step_handler(message, name)
     else:
-        botHelper.send_mes('Вы уже зарегистрированы.', message.chat.id)
+        botHelper.send_mes(msgs[lang]['common']['registration']['already'], message.chat.id)
 
 
 @bot.message_handler(commands=['menu'])
 def menu_command(message):
+    lang = get_lang(message.chat.id)
+
     if User.User(message.chat.id).type_u == 'unlogined':
-        botHelper.send_mes(UI.messages['new_user'], message.chat.id)
+        botHelper.send_mes(msgs[lang]['common']['new_user'], message.chat.id)
     else:
         if User.User(message.chat.id).type_u == 'student':
-            botHelper.send_mes(UI.messages['menu'], message.chat.id, markup=UI.static_markups['menu'])
+            markup = mkp.create(
+                lang,
+                [cbt.course_list_of('all', lang), cbt.course_list_of('my', lang)],
+                include_back=False
+            )
+
+            botHelper.send_mes(
+                msgs[get_lang(message.chat.id)]['common']['menu'],
+                message.chat.id,
+                markup=markup
+            )
         else:
-            botHelper.send_mes(UI.messages['menu'], message.chat.id, markup=UI.static_markups['menu_teach'])
+            markup = mkp.create(
+                lang,
+                [cbt.course_list_of('all', lang), cbt.course_list_of('my', lang)],
+                [tbt.manage_list(lang)], [tbt.new_course(lang)],
+                include_back=False
+            )
+
+            botHelper.send_mes(
+                msgs[get_lang(message.chat.id)]['common']['menu'],
+                message.chat.id,
+                markup=markup
+            )
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'menu')
 def menu(call):
+    lang = get_lang(call.message.chat.id)
+
     if User.User(call.message.chat.id).type_u == 'student':
-        botHelper.edit_mes(UI.messages['menu'], call, markup=UI.static_markups['menu'])
+        markup = mkp.create(
+            lang,
+            [cbt.course_list_of('all', lang), cbt.course_list_of('my', lang)],
+            include_back=False
+        )
+
+        botHelper.edit_mes(
+            msgs[lang]['common']['menu'],
+            call,
+            markup=markup
+        )
     else:
-        botHelper.edit_mes(UI.messages['menu'], call, markup=UI.static_markups['menu_teach'])
+        markup = mkp.create(
+            lang,
+            [cbt.course_list_of('all', lang), cbt.course_list_of('my', lang)],
+            [tbt.manage_list(lang)], [tbt.new_course(lang)],
+            include_back=False
+        )
+
+        botHelper.edit_mes(
+            msgs[lang]['common']['menu'],
+            call,
+            markup=markup
+        )
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'new_course')
 def new_course(call):
-    botHelper.edit_mes('*---Создание курса---*', call)
+    botHelper.edit_mes(msgs[get_lang(call.message.chat.id)]['teacher']['course_create']['begin'], call)
     create_course(call.message.chat.id)
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'course_list')
-@kfubot_callback
-def course_list(call):
+@action
+def course_list(call, lang):
     if call.data['type'] == 'all':  # TODO не добавлять закрытые курсы
         courses = [i for i in Course.fetch_all_courses()]
-        text = UI.messages['all']
+        text = msgs[lang]['common']['all']
     elif call.data['type'] == 'my':
         courses = [i for i in User.User(call.message.chat.id).participation]
-        text = UI.messages['my']
+        text = msgs[lang]['common']['my']
     elif call.data['type'] == 'teach':
         courses = [i for i in User.User(call.message.chat.id).possessions]
-        text = UI.messages['teach']
+        text = msgs[lang]['common']['teach']
     else:
         botHelper.error(call=call)
         return
     page = call.data['page']
 
     p = UI.Paging(courses, sort_key='name')
-    text += p.msg(call.data['page'])
+    text += p.msg(call.data['page'], lang)
     if call.data['type'] == 'teach':
-        markup = mkp.create_listed(tbt.courses(p.list(page)), tbt.manage_list, 2, page)
+        markup = mkp.create_listed(lang, tbt.courses(p.list(page)), tbt.manage_list, lang, page)
     else:
-        markup = mkp.create_listed(cbt.courses(p.list(page)), cbt.course_list_of, 2, call.data['type'], page)
+        markup = mkp.create_listed(
+            lang,
+            cbt.courses(p.list(page)),
+            cbt.course_list_of,
+            call.data['type'],
+            lang, page
+        )
     botHelper.edit_mes(text, call, markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'course')
-@kfubot_callback
-def course(call):
+@action
+def course(call, lang):
     course_ = Course.Course(call.data['c_id'])
     num_par = len(course_.participants)
     owner = course_.owner
 
     if owner.id == call.message.chat.id:  # owner
-        lock = 'открыта' if course_.is_open else 'закрыта'
+        if course_.is_open:
+            lock = msgs[lang]['teacher']['lock_open']
+        else:
+            lock = msgs[lang]['teacher']['lock_close']
         desc = course_.description
         if len(desc) > UI.constants.COURSE_INFO_DESC_LENGTH:
             desc = botHelper.remove_danger(desc[:UI.constants.COURSE_INFO_DESC_LENGTH]) + '...'
-        text = UI.messages['course_owner_min'].format(name=course_.name, num=num_par, lock=lock, desc=desc)
 
-        botHelper.edit_mes(text, call, markup=mkp.create([tbt.manage(call.data['c_id'])]))
+        botHelper.edit_mes(
+            msgs[lang]['teacher']['course_owner_min'].format(
+                name=course_.name, num=num_par, lock=lock, desc=desc
+            ),
+            call,
+            markup=mkp.create(lang, [tbt.manage(call.data['c_id'], lang)])
+        )
     elif course_.id in (c.id for c in User.User(call.message.chat.id).participation):  # enrolled
         cws = course_.classworks
         attend_text = ''
         overall = len(cws)
         if overall:
             att = sum(map(lambda cw_: cw_.attendance(call.message.chat.id).value, cws))
-            attend_text = UI.messages['attendance'].format(
+            attend_text = msgs[lang]['student']['attendance'].format(
                 count=att,
                 overall=overall,
                 ratio=int(att / overall * 100)
@@ -256,23 +335,24 @@ def course(call):
         if tasks:
             total_mark = sum(map(lambda task_: task_.mark(call.message.chat.id).value, tasks))
             mean_mark = total_mark / len(tasks)
-            mark_text = 'Суммарный балл: {}\nСредний балл: {}'.format(total_mark, round(mean_mark, 2))
+            mark_text = msgs[lang]['student']['marks'].format(total_mark, round(mean_mark, 2))
         else:
             mark_text = ''
 
-        text = UI.messages['course'].format(
+        text = msgs[lang]['student']['course'].format(
             name=course_.name, fio=owner.name, num=num_par, mail='', marks=mark_text, attend=attend_text
         )
 
-        c_text = 'Вы уверены, что хотите покинуть курс *{}*?'.format(course_.name)
+        c_text = msgs[lang]['confirm']['leave_course'].format(course_.name)
         if not course_.is_open:
-            c_text += '\n*Запись на этот курс сейчас закрыта*. Возможно, вы не сможете больше записаться на него.'
+            c_text += msgs[lang]['confirm']['leave_course_append']
 
         markup = mkp.create(
-            [cbt.task_list(call.data['c_id'])],
+            lang,
+            [cbt.task_list(call.data['c_id'], lang)],
             [cbt.confirm_action(
                 'leave',
-                btc_text['leave'],
+                msgs[lang]['buttons']['confirm']['leave'],
                 c_text,
                 call.message.chat.id,
                 call.message.message_id,
@@ -282,72 +362,91 @@ def course(call):
 
         botHelper.edit_mes(text, call, markup=markup)
     else:  # not enrolled
-        locked = '' if course_.is_open else '*Запись на курс окончена*'
+        locked = '' if course_.is_open else msgs[lang]['student']['course_closed']
         end_entry = course_.entry_restriction
-        lock = UI.to_dtime(end_entry) if end_entry else 'отсутствует'
-        text = UI.messages['course_not_enroll'].format(
+        lock = UI.to_dtime(end_entry) if end_entry else msgs[lang]['student']['lock_absent']
+
+        text = msgs[lang]['student']['course_not_enroll'].format(
             name=course_.name, fio=owner.name, desc=course_.description, num=num_par, lock=lock, mail='', locked=locked
         )  # TODO mail
-        c_text = 'записаться на курс *{}*'.format(course_.name)
+
+        c_text = msgs[lang]['confirm']['enroll_course'].format(course_.name)
+
         if locked:
-            markup = mkp.create()
+            markup = mkp.create(lang)
         else:
-            markup = mkp.create([
-                cbt.confirm_action(
-                    'enroll', btc_text['enroll'], c_text,
-                    call.message.chat.id, call.message.message_id, c_id=course_.id
-                )
-            ])
+            markup = mkp.create(
+                lang,
+                [cbt.confirm_action(
+                        'enroll',
+                        msgs[lang]['buttons']['confirm']['enroll'],
+                        c_text,
+                        call.message.chat.id,
+                        call.message.message_id,
+                        c_id=course_.id
+                )]
+            )
 
         botHelper.edit_mes(text, call, markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'st_task_list')
-@kfubot_callback
-def st_task_list(call):
+@action
+def st_task_list(call, lang):
     p = UI.Paging(Course.Course(call.data['c_id']).tasks, sort_key='name')
 
-    text = 'Список заданий' + p.msg(call.data['page'])
+    text = msgs[lang]['student']['task_list'] + p.msg(call.data['page'], lang)
 
-    markup = mkp.create_listed(cbt.tasks(p.list(call.data['page'])), cbt.task_list, 2, call.data['page'])
+    markup = mkp.create_listed(
+        lang,
+        cbt.tasks(p.list(call.data['page'])),
+        cbt.task_list,
+        call.data['c_id'], lang, call.data['page']
+    )
 
     botHelper.edit_mes(text, call, markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'st_tsk')
-@kfubot_callback
-def st_tsk(call):
+@action
+def st_tsk(call, lang):
     task_ = Course.Task(call.data['c_id'], call.data['t_id'])
-    text = UI.messages['student_task'].format(
+    text = msgs[lang]['student']['student_task'].format(
         name=task_.name,
         desc=task_.description,
         mark=task_.mark(call.message.chat.id).value,
         hmark=int(task_.highest_mark)
     )
 
-    botHelper.edit_mes(text, call, markup=mkp.create())
+    botHelper.edit_mes(text, call, markup=mkp.create(lang))
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'course_owner')
-@kfubot_callback
-def course_owner(call):
+@action
+def course_owner(call, lang):
     course_ = Course.Course(call.data['c_id'])
 
-    text = UI.messages['course_owner_full'].format(
-        name=course_.name, num=len(course_.participants),
-        lock=UI.to_dtime(course_.entry_restriction), desc=course_.description
+    text = msgs[lang]['teacher']['course_owner_full'].format(
+        name=course_.name,
+        num=len(course_.participants),
+        lock=UI.to_dtime(course_.entry_restriction),
+        desc=course_.description
     )
-    c_text = 'удалить курс *{}*'.format(course_.name)
+    c_text = msgs[lang]['confirm']['delete_course'].format(course_.name)
     markup = mkp.create(
-        [tbt.user_list(call.data['c_id'])],
-        [tbt.task_list(call.data['c_id'])],
-        [tbt.classwork_list(call.data['c_id'])],
-        [tbt.announce(call.data['c_id'])],
-        [tbt.switch_lock(call.data['c_id'], True if course_.is_open else False)],
+        lang,
+        [tbt.user_list(call.data['c_id'], lang)],
+        [tbt.task_list(call.data['c_id'], lang)],
+        [tbt.classwork_list(call.data['c_id'], lang)],
+        [tbt.announce(call.data['c_id'], lang)],
+        [tbt.switch_lock(call.data['c_id'], True if course_.is_open else False, lang)],
         [cbt.confirm_action(
-                'delete_course', btc_text['delete_course'], c_text,
-                call.message.chat.id, call.message.message_id,
-                c_id=course_.id
+            'delete_course',
+            msgs[lang]['buttons']['confirm']['delete_course'],
+            c_text,
+            call.message.chat.id,
+            call.message.message_id,
+            c_id=course_.id
         )]
     )
 
@@ -355,48 +454,48 @@ def course_owner(call):
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'class_list')
-@kfubot_callback
-def class_list(call):
+@action
+def class_list(call, lang):
     classworks = Course.Course(call.data['c_id']).classworks
 
     p = UI.Paging(classworks, sort_key='date')
 
-    text = 'Список классных уроков' + p.msg(call.data['page'])
+    text = msgs[lang]['teacher']['management']['class_list'] + p.msg(call.data['page'], lang)
 
     markup = mkp.create_listed(
+        lang,
         tbt.classworks(p.list(call.data['page'])),
         tbt.classwork_list,
-        2,
-        call.data['c_id'], call.data['page']
+        call.data['c_id'], lang, call.data['page']
     )
-    mkp.add_before_back(markup, tbt.new_classwork(call.data['c_id']))
+    mkp.add_before_back(markup, tbt.new_classwork(call.data['c_id'], lang))
 
     botHelper.edit_mes(text, call, markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'cw')
-@kfubot_callback
-def cw(call):
+@action
+def cw(call, lang):
     course_ = Course.Course(call.data['c_id'])
     classwork = course_.classwork(call.data['cw_id'])
 
     p = UI.Paging(course_.participants, sort_key='name')
 
-    text = UI.messages['classwork'].format(date=classwork.date) + p.msg(call.data['page'])
+    text = msgs[lang]['teacher']['management']['classwork'].format(date=classwork.date) + p.msg(call.data['page'], lang)
 
-    c_text = 'Вы уверены, что хотите удалить занятие *{}*?'.format(classwork.name)
+    c_text = msgs[lang]['confirm']['delete_class'].format(classwork.name)
 
     markup = mkp.create_listed(
+        lang,
         tbt.user_attendance_list(p.list(call.data['page']), call.data['c_id'], call.data['cw_id']),
         tbt.classwork,
-        2,
-        call.data['c_id'], call.data['cw_id'], call.data['page']
+        call.data['c_id'], call.data['cw_id'], lang, call.data['page']
     )
-    mkp.add_before_back(markup, tbt.invert_attendance(call.data['c_id'], call.data['cw_id']))
-    mkp.add_before_back(markup, tbt.change_cw_date(call.data['c_id'], call.data['cw_id']))
+    mkp.add_before_back(markup, tbt.invert_attendance(call.data['c_id'], call.data['cw_id'], lang))
+    mkp.add_before_back(markup, tbt.change_cw_date(call.data['c_id'], call.data['cw_id'], lang))
     mkp.add_before_back(markup, cbt.confirm_action(
         'del_class',
-        btc_text['del_class'],
+        msgs[lang]['buttons']['confirm']['del_class'],
         c_text,
         call.message.chat.id,
         call.message.message_id,
@@ -407,46 +506,47 @@ def cw(call):
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'task_list')
-@kfubot_callback
-def task_list(call):
+@action
+def task_list(call, lang):
     tasks = Course.Course(call.data['c_id']).tasks
 
     p = UI.Paging(tasks, sort_key='name')
 
-    text = 'Список заданий' + p.msg(call.data['page'])
+    text = msgs[lang]['teacher']['management']['task_list'] + p.msg(call.data['page'], lang)
 
     markup = mkp.create_listed(
+        lang,
         tbt.tasks(p.list(call.data['page'])),
         tbt.task_list,
-        2,
-        call.data['c_id'], call.data['page']
+        call.data['c_id'], lang, call.data['page']
     )
-    mkp.add_before_back(markup, tbt.new_task(call.data['c_id']))
+    mkp.add_before_back(markup, tbt.new_task(call.data['c_id'], lang))
 
     botHelper.edit_mes(text, call, markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'task')
-@kfubot_callback
-def task(call):
+@action
+def task(call, lang):
     course_ = Course.Course(call.data['c_id'])
     task_ = course_.task(call.data['t_id'])
 
     p = UI.Paging(course_.participants, sort_key='name')
 
-    text = UI.messages['task'].format(name=task_.name, hmark=int(task_.highest_mark)) + p.msg(call.data['page'])
+    text = msgs[lang]['teacher']['management']['task'].format(name=task_.name, hmark=int(task_.highest_mark)) \
+        + p.msg(call.data['page'], lang)
 
-    c_text = 'Вы уверены, что хотите удалить задание *{}*?'.format(task_.name)
+    c_text = msgs[lang]['confirm']['delete_task'].format(task_.name)
 
     markup = mkp.create_listed(
+        lang,
         tbt.user_tasks_list(p.list(call.data['page']), call.data['c_id'], call.data['t_id']),
         tbt.task,
-        2,
-        call.data['c_id'], call.data['t_id'], call.data['page']
+        call.data['c_id'], call.data['t_id'], lang, call.data['page']
     )
     mkp.add_before_back(markup, cbt.confirm_action(
         'del_task',
-        btc_text['del_task'],
+        msgs[lang]['buttons']['confirm']['del_task'],
         c_text,
         call.message.chat.id,
         call.message.message_id,
@@ -457,25 +557,25 @@ def task(call):
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'user_list')
-@kfubot_callback
-def user_list(call):
+@action
+def user_list(call, lang):
     p = UI.Paging(Course.Course(call.data['c_id']).participants, sort_key='name')
 
-    text = 'Список участников' + p.msg(call.data['page'])
+    text = msgs[lang]['teacher']['management']['user_list'] + p.msg(call.data['page'], lang)
 
     markup = mkp.create_listed(
+        lang,
         tbt.users(p.list(call.data['page']), call.data['c_id']),
         tbt.user_list,
-        2,
-        call.data['c_id'], call.data['page']
+        call.data['c_id'], lang, call.data['page']
     )
 
     botHelper.edit_mes(text, call, markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'usr_mng')
-@kfubot_callback
-def usr_mng(call):
+@action
+def usr_mng(call, lang):
     course_ = Course.Course(call.data['c_id'])
     tasks = course_.tasks
     user = User.User(call.data['u_id'])
@@ -495,7 +595,7 @@ def usr_mng(call):
         overall = None
         att = None
 
-    text = UI.messages['user'].format(
+    text = msgs[lang]['teacher']['management']['user'].format(
         course=course_.name,
         name=user.name,
         email='',
@@ -505,13 +605,14 @@ def usr_mng(call):
         attend_tot=overall
     )
 
-    c_text = 'Вы уверены, что хотите отчислить *{}*?'.format(user.name)
+    c_text = msgs[lang]['confirm']['kick'].format(user.name)
 
     markup = mkp.create(
+        lang,
         [
             cbt.confirm_action(
                 'kick',
-                btc_text['kick'],
+                msgs[lang]['buttons']['confirm']['kick'],
                 c_text,
                 call.message.chat.id,
                 call.message.message_id,
@@ -524,57 +625,54 @@ def usr_mng(call):
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'enroll')
-def enroll(call):
-    call.data = json.loads(call.data)
-
+@quick_action
+def enroll(call, lang):
     if call.data['c_id'] not in (c.id for c in User.User(call.message.chat.id).participation):
         c = Course.Course(call.data['c_id'])
         c.append_student(call.message.chat.id)
-        bot.answer_callback_query(call.id, 'Вы записались на курс ' + c.name)
+        bot.answer_callback_query(call.id, msgs[lang]['callback']['course_enrolled'] + c.name)
     else:
-        bot.answer_callback_query(call.id, 'Вы уже записаны на этот курс!', show_alert=True)
+        bot.answer_callback_query(call.id, msgs[lang]['callback']['course_enrolled_already'], show_alert=True)
 
     back(call, True)
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'leave')
-def leave(call):
-    call.data = json.loads(call.data)
-
+@quick_action
+def leave(call, lang):
     if call.data['c_id'] in (c.id for c in User.User(call.message.chat.id).participation):
         c = Course.Course(call.data['c_id'])
         c.remove_student(call.message.chat.id)
-        bot.answer_callback_query(call.id, 'Вы покинули курс ' + c.name)
+        bot.answer_callback_query(call.id, msgs[lang]['callback']['course_leave'] + c.name)
     else:
-        bot.answer_callback_query(call.id, 'Вы не записаны на этот курс!', show_alert=True)
+        bot.answer_callback_query(call.id, msgs[lang]['callback']['course_not_enrolled'], show_alert=True)
 
     back(call, True)
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'delete_course')
-def delete_course(call):
-    call.data = json.loads(call.data)
+@quick_action
+def delete_course(call, lang):
     course_ = Course.Course(call.data['c_id'])
 
     if call.message.chat.id == course_.owner.id:
         course_.delete()
-        bot.answer_callback_query(call.id, 'Курс удален')
+        bot.answer_callback_query(call.id, msgs[lang]['callback']['course_deleted'])
     else:
-        bot.answer_callback_query(call.id, 'Вы не владелец этого курса!', show_alert=True)
+        bot.answer_callback_query(call.id, msgs[lang]['callback']['not_owner'], show_alert=True)
 
     back(call, True, 2)
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'switch_lock')
-def switch_lock(call):
-    call.data = json.loads(call.data)
-
+@quick_action
+def switch_lock(call, lang):
     if call.data['lock']:
         Course.Course(call.data['c_id']).entry_restriction = time.time()
-        bot.answer_callback_query(call.id, 'Запись на курс закрыта')
+        bot.answer_callback_query(call.id, msgs[lang]['callback']['course_closed'])
     else:
         Course.Course(call.data['c_id']).entry_restriction = None
-        bot.answer_callback_query(call.id, 'Запись на курс открыта')
+        bot.answer_callback_query(call.id, msgs[lang]['callback']['course_opened'])
 
     back(call, True)
 
@@ -586,54 +684,66 @@ def announce(call):
         botHelper.renew_menu(call, new_mes)
         back(call, True)
 
+    def cancel():
+        botHelper.send_mes(msgs[lang]['teacher']['announce']['cancel'])
+        return_to_menu()
+
     def send():
         course_ = Course.Course(call.data['c_id'])
 
         for part in course_.participants:
             try:
-                botHelper.send_mes('Сообщение от преподавателя курса {}:'.format(course_.name), part.id)
+                botHelper.send_mes(
+                    msgs[lang]['teacher']['announce']['got_announce'].format(
+                        course_.name
+                    ),
+                    part.id
+                )
                 botHelper.send_mes(announce_info['text'], part.id)
                 for file, caption in zip(announce_info['file'], announce_info['file_caption']):
                     bot.send_document(part.id, file, caption=caption)
             except TBotApiException:
                 continue
 
-        botHelper.send_mes('*---Уведомление отправлено---*', call.message.chat.id)
+        botHelper.send_mes(
+            msgs[lang]['teacher']['announce']['sent'],
+            call.message.chat.id
+        )
+
         return_to_menu()
 
     def get_file(message):
-        if message.document:
-            announce_info['file'].append(message.document.file_id)
-            announce_info['file_caption'].append(message.caption)
-            bot.register_next_step_handler(message, get_file)
-        else:
+        if message.text == '/exit':
+            cancel()
+        elif message.text == '/send':
             send()
+        else:
+            if message.document:
+                announce_info['file'].append(message.document.file_id)
+                announce_info['file_caption'].append(message.caption)
+                bot.register_next_step_handler(message, get_file)
 
     def get_text(message):
-        announce_info['text'] = message.text
+        if message.text == '/exit':
+            cancel()
+        else:
+            announce_info['text'] = message.text
 
-        botHelper.send_mes(
-            'Если хотите прикрепить файлы к уведомлению, отправьте их по одному (как документ).'
-            '\nИнача нажмите /send, чтобы отправить уведомление, или напишите любой текст.',
-            call.message.chat.id
-        )
-        bot.register_next_step_handler(message, get_file)
+            botHelper.send_mes(msgs[lang]['teacher']['announce']['files'], call.message.chat.id)
+            bot.register_next_step_handler(message, get_file)
 
     call.data = json.loads(call.data)
+    lang = get_lang(call.message.chat.id)
     announce_info = {'text': '', 'file': [], 'file_caption': []}
 
-    botHelper.edit_mes('*---Создание уведомления---*', call)
-    botHelper.send_mes(
-        'Введите текст уведомления.\n/exit чтобы отменить.',
-        call.message.chat.id
-    )
+    botHelper.edit_mes(msgs[lang]['teacher']['announce']['begin'], call)
+    botHelper.send_mes(msgs[lang]['teacher']['announce']['input_text'], call.message.chat.id)
     bot.register_next_step_handler(call.message, get_text)
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'new_class')
-def new_class(call):
-    call.data = json.loads(call.data)
-
+@quick_action
+def new_class(call, lang):
     d = UI.to_dtime(time.time())
     cw_id = Course.Classwork(call.data['c_id'], name=d, date=d).number
     for user in Course.Course(call.data['c_id']).participants:
@@ -643,22 +753,20 @@ def new_class(call):
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'del_class')
-def del_class(call):
-    call.data = json.loads(call.data)
-
+@quick_action
+def del_class(call, lang):
     if call.message.chat.id == Course.Course(call.data['c_id']).owner.id:
         Course.Classwork(call.data['c_id'], call.data['cw_id']).delete()
-        bot.answer_callback_query(call.id, 'Занятие удалено')
+        bot.answer_callback_query(call.id, msgs[lang]['callback']['class_deleted'])
     else:
-        bot.answer_callback_query(call.id, 'Этого занятия не существует!', show_alert=True)
+        bot.answer_callback_query(call.id, msgs[lang]['callback']['class_not_exists'], show_alert=True)
 
     back(call, True, 2)
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'attend')
-def attend(call):
-    call.data = json.loads(call.data)
-
+@quick_action
+def attend(call, lang):
     if bool(call.data.get('u_id')):
         Course.Attendance(call.data['c_id'], call.data['cw_id'], call.data['u_id']).value = \
             not Course.Attendance(call.data['c_id'], call.data['cw_id'], call.data['u_id']).value
@@ -677,10 +785,17 @@ def new_task(call):
         botHelper.renew_menu(call, new_mes)
         back(call, True)
 
+    def cancel():
+        botHelper.send_mes(
+            msgs[lang]['teacher']['task_create']['canceled'],
+            call.message.chat.id
+        )
+        return_to_menu()
+
     def create():
         name = task_info['name']
         if not name:
-            name = 'Задание ' + str(len(Course.Course(call.data['c_id']).tasks) + 1)
+            name = msgs[lang]['teacher']['task_create']['name'] + str(len(Course.Course(call.data['c_id']).tasks) + 1)
 
         Course.Task(
             course_id=call.data['c_id'],
@@ -689,88 +804,76 @@ def new_task(call):
             highest_mark=task_info['hmark']
         )
 
-        botHelper.send_mes('*---Задание создано---*', call.message.chat.id)
+        botHelper.send_mes(
+            msgs[lang]['teacher']['task_create']['created'],
+            call.message.chat.id
+        )
         return_to_menu()
 
     def get_hmark(message):
         if message.text == '/exit':
-            botHelper.send_mes('*---Создание задания отменено---*', call.message.chat.id)
-            return_to_menu()
+            cancel()
         else:
             if message.text != '0' and re.fullmatch(r'\d+', message.text):
                 task_info['hmark'] = int(message.text)
 
                 create()
             else:
-                botHelper.send_mes(
-                    'Максимальный балл должен быть положительным целым числом.\n/exit чтобы отменить создание',
-                    call.message.chat.id
-                )
+                botHelper.send_mes(msgs[lang]['teacher']['task_create']['error_max_mark'], call.message.chat.id)
                 bot.register_next_step_handler(message, get_hmark)
 
     def get_desc(message):
         if message.text == '/exit':
-            botHelper.send_mes('*---Создание задания отменено---*', call.message.chat.id)
-            return_to_menu()
+            cancel()
         else:
             if len(message.text) <= UI.constants.TASK_DESC_MAX_LENGTH:
                 if message.text != '/no':
                     task_info['desc'] += message.text
 
-                botHelper.send_mes('Введите максимальный балл задания.', call.message.chat.id)
+                botHelper.send_mes(msgs[lang]['teacher']['task_create']['input_max_mark'], call.message.chat.id)
                 bot.register_next_step_handler(message, get_hmark)
             else:
                 botHelper.send_mes(
-                    'Максимальная длина {} символов, попробуйте еще раз.\n/exit, чтобы отменить создание'.format(
-                        UI.constants.TASK_DESC_MAX_LENGTH
-                    ),
+                    msgs[lang]['teacher']['task_create']['error_length'].format(UI.constants.TASK_DESC_MAX_LENGTH),
                     call.message.chat.id
                 )
                 bot.register_next_step_handler(message, get_desc)
 
     def get_name(message):
         if message.text == '/exit':
-            botHelper.send_mes('*---Создание задания отменено---*', call.message.chat.id)
+            cancel()
             return_to_menu()
         else:
             if len(message.text) <= UI.constants.TASK_NAME_MAX_LENGTH:
                 if message.text != '/no':
                     task_info['name'] = message.text
 
-                botHelper.send_mes(
-                    'Введите описание задания.\n/no чтобы использовать описание по умолчанию.',
-                    call.message.chat.id
-                )
+                botHelper.send_mes(msgs[lang]['teacher']['task_create']['input_desc'], call.message.chat.id)
                 bot.register_next_step_handler(message, get_desc)
             else:
                 botHelper.send_mes(
-                    'Максимальная длина {} символов, попробуйте еще раз.\n/exit, чтобы отменить создание'.format(
-                        UI.constants.TASK_NAME_MAX_LENGTH
-                    ),
+                    msgs[lang]['teacher']['task_create']['error_length'].format(UI.constants.TASK_NAME_MAX_LENGTH),
                     call.message.chat.id
                 )
                 bot.register_next_step_handler(message, get_name)
 
     call.data = json.loads(call.data)
-    task_info = {'name': '', 'desc': 'Максимальный балл: {}\n', 'hmark': 0}
+    lang = get_lang(call.message.chat.id)
+    task_info = {'name': '', 'desc': msgs[lang]['teacher']['task_create']['max_mark'], 'hmark': 0}
 
-    botHelper.edit_mes('*---Создание задания---*', call)
-    botHelper.send_mes(
-        'Введите имя задания.\n/no чтобы использовать имя по умолчанию.',
-        call.message.chat.id
-    )
+    botHelper.edit_mes(msgs[lang]['teacher']['task_create']['begin'], call)
+    botHelper.send_mes(msgs[lang]['teacher']['task_create']['input_name'], call.message.chat.id)
     bot.register_next_step_handler(call.message, get_name)
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'del_task')
-def del_task(call):
-    call.data = json.loads(call.data)
-
+@quick_action
+def del_task(call, lang):
     if call.message.chat.id == Course.Course(call.data['c_id']).owner.id:
         Course.Task(call.data['c_id'], call.data['t_id']).delete()
-        bot.answer_callback_query(call.id, 'Занятие удалено')
+        bot.answer_callback_query(call.id, msgs[lang]['callback']['task_deleted'])
     else:
-        bot.answer_callback_query(call.id, 'Этого задания не существует!', show_alert=True)
+        bot.answer_callback_query(call.id, msgs[lang]['callback']['task_not_exists'], show_alert=True)
 
     back(call, True, 2)
 
@@ -793,17 +896,17 @@ def do_tsk(call):
 
                 return_to_menu()
             else:
-                botHelper.send_mes('Оценка превышает максимум. Попробуйте еще раз.\n/exit чтобы отменить')
+                botHelper.send_mes(msgs[get_lang(call.message.chat.id)]['teacher']['management']['error_mark'])
                 bot.register_next_step_handler(message, get_mark)
         else:
-            botHelper.send_mes('Неверый ввод. Попробуйте еще раз.\n/exit чтобы отменить.')
+            botHelper.send_mes(msgs[get_lang(call.message.chat.id)]['teacher']['management']['wrong_input'])
             bot.register_next_step_handler(message, get_mark)
 
     call.data = json.loads(call.data)
     task_ = Course.Task(call.data['c_id'], call.data['t_id'])
     mark = Course.Mark(call.data['c_id'], call.data['t_id'], call.data['u_id'])
 
-    text = UI.messages['mark_one'].format(
+    text = msgs['mark_one'].format(
         task=task_.name,
         user=User.User(call.data['u_id']).name,
         mark=mark.value,
@@ -815,17 +918,20 @@ def do_tsk(call):
 
 
 @bot.callback_query_handler(func=lambda call: goto(call.data) == 'kick')
-def kick(call):
-    call.data = json.loads(call.data)
+@quick_action
+def kick(call, lang):
     course_ = Course.Course(call.data['c_id'])
 
     if User.User(call.message.chat.id).type_u == 'teacher':
         if course_.id in (c.id for c in User.User(call.data['u_id']).participation):
             course_.remove_student(call.data['u_id'])
+            bot.answer_callback_query(call.id, msgs[lang]['callback']['student_kicked'].format(
+                name=User.User(call.data['u_id']).name
+            ))
         else:
-            bot.answer_callback_query(call.id, 'Этот студент не записан на этот курс!', show_alert=True)
+            bot.answer_callback_query(call.id, msgs[lang]['callback']['student_not_enrolled'], show_alert=True)
     else:
-        bot.answer_callback_query(call.id, 'Вы не являетесь преподавателем', show_alert=True)
+        bot.answer_callback_query(call.id, msgs[lang]['callback']['not_teacher'], show_alert=True)
 
     back(call, True, 2)
 
@@ -847,7 +953,10 @@ def cw_date(call):
             try:
                 date = datetime.date(2000 + int(in_date[0]), int(in_date[1]), int(in_date[2])).strftime('%d %b %Y')
             except ValueError:
-                botHelper.send_mes('Неверный ввод. Попробуйте еще раз', message.messasge_id)
+                botHelper.send_mes(
+                    msgs[get_lang(call.message.chat.id)]['teacher']['management']['wrong_input'],
+                    message.messasge_id
+                )
                 bot.register_next_step_handler(message, get_date)
             else:
                 cw_.date = date
@@ -855,12 +964,15 @@ def cw_date(call):
 
                 return_to_menu()
         else:
-            botHelper.send_mes('Неверный ввод. Попробуйте еще раз', message.messasge_id)
+            botHelper.send_mes(
+                msgs[get_lang(call.message.chat.id)]['teacher']['management']['wrong_input'],
+                message.messasge_id
+            )
             bot.register_next_step_handler(message, get_date)
 
     call.data = json.loads(call.data)
 
-    botHelper.edit_mes('Введите дату в формате _dd mm yy_.', call)
+    botHelper.edit_mes(msgs[get_lang(call.message.chat.id)]['teacher']['management']['input_date'], call)
     bot.register_next_step_handler(call.message, get_date)
 
 
