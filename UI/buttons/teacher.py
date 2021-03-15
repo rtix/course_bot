@@ -1,280 +1,182 @@
-"""Кнопки преподователей"""
-
 from json import dumps
 
 from telebot.types import InlineKeyboardButton
 
 from Models import Course
-from Models import User
+import UI.misc
 
 
-# выводит управляемые курсы
-manage_list = InlineKeyboardButton(
-    'Управление курсами',
-    callback_data=dumps(dict(type='menu', cmd='teach_courses', page=0))
+def new_course(lang):
+    return InlineKeyboardButton(
+        UI.misc.messages[lang]['buttons']['teacher']['new_course'],
+        callback_data=dumps(dict(G='new_course'))
     )
 
 
-def manage(id, prev=None):
-    button = InlineKeyboardButton(
-        'Управление',
-        callback_data=dumps(dict(type='c_act', cmd='mng', id=id, prev=prev))
-        )
-
-    return button
+def manage_list(lang, page=0):
+    return InlineKeyboardButton(
+        UI.misc.messages[lang]['buttons']['teacher']['manage_list'],
+        callback_data=dumps(dict(G='course_list', type='teach', page=page))
+    )
 
 
-create = InlineKeyboardButton(
-        'Создать курс',
-        callback_data=dumps(dict(type='new_course', cmd='NONE'))
-        )
+def courses(courses_list):
+    """
+    Берет на вход список курсов и создает список кнопок с айди курса.
 
+    :param courses_list: iterable. Список курсов.
+    :return: list of InlineKeyboardButton. Возвращает список кнопок с айди курсов.
+    """
 
-def delete(id):
-    button = InlineKeyboardButton(
-            'Удалить курс',
-            callback_data=dumps(dict(type='managing', cmd='del_c', id=id))
-            )
-
-    return button
-
-
-def participants(id, prev=None):
-    button = InlineKeyboardButton(
-            'Участники',
-            callback_data=dumps(dict(type='managing', cmd='parts', id=id, prev=prev))
-            )
-
-    return button
-
-
-def tasks(id):
-    button = InlineKeyboardButton(
-            'Задания',
-            callback_data=dumps(dict(type='managing', cmd='task', id=id))
-            )
-
-    return button
-
-
-def task(id_tasks, id_course, back_page=0):
     arr = []
-
-    students = Course.Course(id_course).participants
-
-    for i in id_tasks:
-        star = ''
-        for student in students:
-            if Course.Task(id_course, i).mark(student.id).value is None:
-                star = '*'
-                break
-
+    for course in courses_list:
         button = InlineKeyboardButton(
-                Course.Task(id_course, i).name + star,
-                callback_data=dumps(dict(type='task', id=id_course, id_t=i, page=back_page))
-                )
+            course.name,
+            callback_data=dumps(dict(G='course_owner', c_id=course.id))
+        )
         arr.append(button)
 
     return arr
 
 
-def task_new(id_course):
-    button = InlineKeyboardButton(
-            "Новое задание",
-            callback_data=dumps(dict(type='new_task', id=id_course))
-            )
-
-    return button
+def manage(c_id, lang):
+    return InlineKeyboardButton(
+        UI.misc.messages[lang]['buttons']['teacher']['manage'],
+        callback_data=dumps(dict(G='course_owner', c_id=c_id))
+    )
 
 
-def attendance(id):
-    button = InlineKeyboardButton(
-            'Посещаемость',
-            callback_data=dumps(dict(type='managing', cmd='attend', id=id))
-            )
+def switch_lock(c_id, lock, lang):
+    if lock:
+        text = UI.misc.messages[lang]['buttons']['teacher']['switch_lock_close']
+    else:
+        text = UI.misc.messages[lang]['buttons']['teacher']['switch_lock_open']
 
-    return button
-
-
-def redact(id, prev=None):
-    button = InlineKeyboardButton(
-            'Редактировать',
-            callback_data=dumps(dict(type='managing', cmd='red', id=id, prev=prev))
-            )
-
-    return button
+    return InlineKeyboardButton(
+        text,
+        callback_data=dumps(dict(G='switch_lock', c_id=c_id, lock=lock))
+    )
 
 
-def course_out(course_id):
-    button = InlineKeyboardButton(
-            'Выгрузить данные в .xlsx',
-            callback_data=dumps(dict(type='managing', cmd='c_out', id=course_id))
-            )
-
-    return button
+def announce(c_id, lang):
+    return InlineKeyboardButton(
+        UI.misc.messages[lang]['buttons']['teacher']['announce'],
+        callback_data=dumps(dict(G='announce', c_id=c_id))
+    )
 
 
-def user(id_u, id_c, back_page=0):
+def classwork_list(c_id, lang, page=0):
+    return InlineKeyboardButton(
+        UI.misc.messages[lang]['buttons']['teacher']['classwork_list'],
+        callback_data=dumps(dict(G='class_list', c_id=c_id, page=page))
+    )
+
+
+def classworks(classworks_list, page=0):
     arr = []
-    for i in id_u:
-        name = User.User(i).name
-        button = InlineKeyboardButton(
-            name,
-            callback_data=dumps(dict(type='user', id=id_c, id_u=i, page=back_page))
-            )
-        arr.append(button)
+    for cw in classworks_list:
+        arr.append(classwork(cw.course_id, cw.number, page))
 
     return arr
 
 
-def user_mark(id_u, id_c, id_t):
-    task = Course.Task(id_c, id_t)
+def classwork(c_id, cw_id, page=0):
+    return InlineKeyboardButton(
+        Course.Classwork(c_id, cw_id).name,
+        callback_data=dumps(dict(G='cw', c_id=c_id, cw_id=cw_id, page=page))
+    )
 
+
+def new_classwork(c_id, lang):
+    return InlineKeyboardButton(
+        UI.misc.messages[lang]['buttons']['teacher']['new_classwork'],
+        callback_data=dumps(dict(G='new_class', c_id=c_id))
+    )
+
+
+def user_attendance_list(users_list, c_id, cw_id):
+    cw = Course.Classwork(c_id, cw_id)
     arr = []
-    for i in id_u:
-        name = User.User(i).name if task.mark(i).value is not None else User.User(i).name + '*'
-        button = InlineKeyboardButton(
-            name,
-            callback_data=dumps(dict(type='mark_u_o', id=id_c, id_u=i, id_t=id_t))
-            )
-        arr.append(button)
+    for usr in users_list:
+        arr.append(InlineKeyboardButton(
+            usr.name + ' #' if cw.attendance(usr.id).value else usr.name,
+            callback_data=dumps(dict(G='attend', u_id=usr.id, c_id=c_id, cw_id=cw_id))
+        ))
 
     return arr
 
 
-def remove_user(id_course, id_user):
-    button = InlineKeyboardButton(
-        'Убрать? Удалить? Отчислить?',
-        callback_data=dumps(dict(type='u_act', cmd='rm', id=id_course, id_u=id_user))
-        )
-
-    return button
+def invert_attendance(c_id, cw_id, lang):
+    return InlineKeyboardButton(
+        UI.misc.messages[lang]['buttons']['teacher']['invert_attendance'],
+        callback_data=dumps(dict(G='attend', c_id=c_id, cw_id=cw_id))
+    )
 
 
-def ban_user(id_course, id_user):
-    button = InlineKeyboardButton(
-        'Заблокировать',
-        callback_data=dumps(dict(type='u_act', cmd='ban', id=id_course, id_u=id_user))
-        )
-
-    return button
+def task_list(c_id, lang, page=0):
+    return InlineKeyboardButton(
+        UI.misc.messages[lang]['buttons']['teacher']['task_list'],
+        callback_data=dumps(dict(G='task_list', c_id=c_id, page=page))
+    )
 
 
-def confirm(cmd, id_course, id_user=0):
-    button = InlineKeyboardButton(
-        'Да',
-        callback_data=dumps(dict(type='conf', cmd=cmd, id=id_course, id_u=id_user))
-        )
-
-    return button
-
-
-def mark_user(id_course, id_task, page=0):
-    button = InlineKeyboardButton(
-        'Одному студенту',
-        callback_data=dumps(dict(type='mark_o', id=id_course, id_t=id_task, page=page))
-        )
-
-    return button
-
-
-def mark_all(id_course, id_task):
-    button = InlineKeyboardButton(
-        'Всем студентам',
-        callback_data=dumps(dict(type='mark_a', id=id_course, id_t=id_task))
-        )
-
-    return button
-
-
-def class_list(class_ids, course_id, page=0):
+def tasks(tasks_list, page=0):
     arr = []
-
-    k = 1
-    for i in class_ids:
-        button = InlineKeyboardButton(
-            'Занятие ' + str(k),
-            callback_data=dumps(dict(type='classes', id=course_id, id_cl=i, page=page))
-            )
-        arr.append(button)
-        k += 1
+    for tsk in tasks_list:
+        arr.append(task(tsk.course_id, tsk.number, page))
 
     return arr
 
 
-def class_csv(course_id):
-    button = InlineKeyboardButton(
-        'Загрузить через .csv',
-        callback_data=dumps(dict(type='file', cmd='csv', id=course_id))
-        )
-
-    return button
+def task(c_id, t_id, page=0):
+    return InlineKeyboardButton(
+        Course.Task(c_id, t_id).name,
+        callback_data=dumps(dict(G='task', c_id=c_id, t_id=t_id, page=page))
+    )
 
 
-def class_add(course_id):
-    button = InlineKeyboardButton(
-        'Добавить',
-        callback_data=dumps(dict(type='class', cmd='add', id=course_id))
-        )
-
-    return button
+def new_task(c_id, lang):
+    return InlineKeyboardButton(
+        UI.misc.messages[lang]['buttons']['teacher']['new_task'],
+        callback_data=dumps(dict(G='new_task', c_id=c_id))
+    )
 
 
-def class_remove(course_id):
-    button = InlineKeyboardButton(
-        'Убрать',
-        callback_data=dumps(dict(type='class', cmd='rm', id=course_id))
-        )
-
-    return button
-
-
-def user_attendance(users, course_id, class_id):
+def user_tasks_list(users_list, c_id, t_id):
     arr = []
-
-    cw = Course.Classwork(course_id, class_id)
-
-    for user in users:
-        button = InlineKeyboardButton(
-            User.User(user.id).name if cw.attendance(user.id).value else User.User(user.id).name + '*',
-            callback_data=dumps(dict(type='sw_attend', id=course_id, id_u=user.id, id_cl=class_id))
-            )
-        arr.append(button)
+    for usr in users_list:
+        arr.append(InlineKeyboardButton(
+            usr.name,
+            callback_data=dumps(dict(G='do_tsk', u_id=usr.id, c_id=c_id, t_id=t_id))
+        ))
 
     return arr
 
 
-def invert_attendance(course_id, class_id):
-    button = InlineKeyboardButton(
-            'Инвертировать посещения',
-            callback_data=dumps(dict(type='sw_attend', id=course_id, id_cl=class_id))
-            )
-
-    return button
+def user_list(c_id, lang, page=0):
+    return InlineKeyboardButton(
+        UI.misc.messages[lang]['buttons']['teacher']['user_list'],
+        callback_data=dumps(dict(G='user_list', c_id=c_id, page=page))
+    )
 
 
-def class_xl(course_id):
-    button = InlineKeyboardButton(
-        'Загрузить через .xl*',
-        callback_data=dumps(dict(type='file', cmd='xl_a', id=course_id))
-        )
+def users(users_list, c_id):
+    arr = []
+    for usr in users_list:
+        arr.append(InlineKeyboardButton(
+            usr.name,
+            callback_data=dumps(dict(G='usr_mng', u_id=usr.id, c_id=c_id))
+        ))
 
-    return button
-
-
-def task_xl(course_id):
-    button = InlineKeyboardButton(
-        'Загрузить через .xl*',
-        callback_data=dumps(dict(type='file', cmd='xl_t', id=course_id))
-        )
-
-    return button
+    return arr
 
 
-def announce(course_id):
-    button = InlineKeyboardButton(
-        'Сделать объявление',
-        callback_data=dumps(dict(type='managing', cmd='ance', id=course_id))
-        )
+def kick_user(c_id, u_id):
+    return InlineKeyboardButton('Отчислить', callback_data=dumps(dict(G='kick', c_id=c_id, u_id=u_id)))
 
-    return button
+
+def change_cw_date(c_id, cw_id, lang):
+    return InlineKeyboardButton(
+        UI.misc.messages[lang]['buttons']['teacher']['change_cw_data'],
+        callback_data=dumps(dict(G='cw_date', c_id=c_id, cw_id=cw_id))
+    )

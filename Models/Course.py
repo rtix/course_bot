@@ -1,3 +1,5 @@
+import time
+
 from Models import User
 from datetime import date
 from Database import CourseDB
@@ -315,7 +317,12 @@ class Course():
 	@property
 	def literatures(self):
 		return tuple(Literature(self.__course_id, lit_number) for lit_number in CourseDB.get_course(self.__course_id)["lit_numbers"])
-	
+
+	@property
+	def is_open(self):
+		restriction_date = self.entry_restriction
+		return restriction_date is None or time.time() < float(restriction_date)
+
 	def append_student(self, user_id):
 		CourseDB.append_user_course(user_id, self.__course_id)
 	

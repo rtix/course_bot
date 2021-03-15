@@ -1,126 +1,135 @@
 """Общие кнопки, которые есть у всех юзеров"""
 
-from json import dumps
+from json import dumps, loads
 
 from telebot.types import InlineKeyboardButton
 
-from Models import Course
+import UI.buttons.confirm
+import UI.misc
+from Bot.util import save_confirm_message
 
-registration = InlineKeyboardButton(
-    'Зарегистрироваться',
-    callback_data=dumps(dict(type='reg'))
-    )
 
-# выводит все курсы
-all_courses = InlineKeyboardButton(
-    'Все курсы',
-    callback_data=dumps(dict(type='menu', cmd='all_courses', page=0))
-    )
-
-# выводит курсы, на которые записан
-my_courses = InlineKeyboardButton(
-    'Мои курсы',
-    callback_data=dumps(dict(type='menu', cmd='my_courses', page=0))
+def back(lang):
+    return InlineKeyboardButton(
+        UI.misc.messages[lang]['buttons']['common']['back'],
+        callback_data=dumps(dict(G='back'))
     )
 
 
-def course(id, prev='', back_page=0):
+def paging_forward(data_func, *args):
     """
-    Берет на вход список 'id' и создает список кнопок с айди курса.
+    Создает кнопку вперед для переключения страницы списка
 
-    :param id: list of int. Список айди курсов.
-    :param prev: str. Меню в которое попадет при нажатии кнопки "Назад".
-    :param back_page: int. Страница для возврата. Чтобы, если зашел на курс из страницы 3,
-                        на ту же страницу и возвратился.
+    :param data_func: func from UI.buttons. Действие, которое будет возвращать кнопка
+    :return: InlineKeyboardButton
+    """
+
+    g_data = loads(data_func(*args).callback_data)
+    g_data['page'] += 1
+    text = '>>'
+
+    return InlineKeyboardButton(text, callback_data=dumps(g_data))
+
+
+def paging_backward(data_func, *args):
+    """
+    Создает кнопку назад для переключения страницы списка
+
+    :param data_func: func from UI.buttons. Действие, которое будет возвращать кнопка
+    :return: InlineKeyboardButton
+    """
+
+    g_data = loads(data_func(*args).callback_data)
+    g_data['page'] -= 1
+    text = '<<'
+
+    return InlineKeyboardButton(text, callback_data=dumps(g_data))
+
+
+def confirm(what, lang, **kwargs):
+    """
+    Создаёт кнопку положительного подтверждения дейтсвия, которая вернёт само действие.
+
+    :param what: str. Название действия; должно совпадать с именем функции из этого модуля.
+    :param lang: str. Язык пользователя.
+    :param kwargs: Аргументы вызываемой функции.
+    :return: InlineKeyboardButton.
+    """
+
+    return InlineKeyboardButton(
+        UI.misc.messages[lang]['buttons']['common']['confirm'],
+        callback_data=dumps(getattr(UI.buttons.confirm, what)(**kwargs))
+    )
+
+
+def dis_confirm(lang):
+    return InlineKeyboardButton(
+        UI.misc.messages[lang]['buttons']['common']['dis_confirm'],
+        callback_data=dumps(dict(G='no'))
+    )
+
+
+def confirm_action(action, button_text, confirm_text, user_id, message_id, **kwargs):
+    """
+    Создает кнопку, которая ведет к подтверждению действия.
+
+    :param button_text: str. Текст кнопки.
+    :param confirm_text: str. Текст кнопки.
+    :param action: str; function name. Название действия.
+    :param user_id: int. id пользователя.
+    :param message_id: int. id сообщения(меню).
+    :param kwargs: аргументы для дальнейшего действия при подтверждении.
+    :return: InlineKeyboardButton.
+    """
+
+    save_confirm_message(confirm_text, user_id, message_id)
+    return InlineKeyboardButton(
+        button_text,
+        callback_data=dumps(dict(G='C', what=action, **kwargs))
+    )
+
+
+def course_list_of(what, lang, page=0):
+    if what == 'all':
+        text = UI.misc.messages[lang]['buttons']['common']['all']
+    else:
+        text = UI.misc.messages[lang]['buttons']['common']['my']
+
+    return InlineKeyboardButton(
+        text,
+        callback_data=dumps(dict(G='course_list', type=what, page=page))
+    )
+
+
+def courses(courses_list):
+    """
+    Берет на вход список курсов и создает список кнопок с айди курса.
+
+    :param courses_list: iterable. Список курсов.
     :return: list of InlineKeyboardButton. Возвращает список кнопок с айди курсов.
     """
 
     arr = []
-    for i in id:
-        name = Course.Course(i).name
+    for course in courses_list:
         button = InlineKeyboardButton(
-            name,
-            callback_data=dumps(dict(type='courses', id=i, prev=prev, page=back_page))
-            )
+            course.name,
+            callback_data=dumps(dict(G='course', c_id=course.id))
+        )
         arr.append(button)
 
     return arr
 
 
-def enroll(id, prev=None):
-    button = InlineKeyboardButton(
-        'Записаться',
-        callback_data=dumps(dict(type='c_act', cmd='enroll', id=id, prev=prev))
-        )
-
-    return button
+def task_list(c_id, lang, page=0):
+    return InlineKeyboardButton(
+        UI.misc.messages[lang]['buttons']['common']['task_list'],
+        callback_data=dumps(dict(G='st_task_list', c_id=c_id, page=page))
+    )
 
 
-def leave(id, prev=None):
-    button = InlineKeyboardButton(
-        'Отписаться',
-        callback_data=dumps(dict(type='c_act', cmd='leave', id=id, prev=prev))
-            )
-
-    return button
-
-
-# кнопка назад по аргументу to - куда возвращаться
-def back(to, extra='', extra1=''):
-    button = InlineKeyboardButton(
-        'Назад',
-        callback_data=dumps(dict(type='back', back=to, ex=extra, ex1=extra1))
-        )
-
-    return button
-
-
-# кнопка вперед
-def forward(type, page, cmd, id=None):
-    button = InlineKeyboardButton(
-        '>',
-        callback_data=dumps(dict(type=type, cmd=cmd, page=page + 1, id=id))
-        )
-
-    return button
-
-
-def backward(type, page, cmd, id=None):
-    button = InlineKeyboardButton(
-        '<',
-        callback_data=dumps(dict(type=type, cmd=cmd, page=page - 1, id=id))
-        )
-
-    return button
-
-
-def show_mark(id_course, prev='menu', page=0):
-    button = InlineKeyboardButton(
-            'Успеваемость',
-            callback_data=dumps(dict(type='perf', id=id_course, page=page, prev=prev))
-            )
-
-    return button
-
-
-def task_list(id_course, prev='menu', page=0):
-    button = InlineKeyboardButton(
-            'Список заданий',
-            callback_data=dumps(dict(type='task_s', id=id_course, page=page, prev=prev))
-            )
-
-    return button
-
-
-def task(id_tasks, id_course, id_user, back_page=0):
+def tasks(tasks_list):
     arr = []
-
-    for i in id_tasks:
-        task = Course.Task(id_course, i)
-        button = InlineKeyboardButton(
-                '{}  {}/{}'.format(task.name, task.mark(id_user).value, task.highest_mark),
-                callback_data=dumps(dict(type='task_u', id=id_course, id_t=i, page=back_page))
-                )
-        arr.append(button)
+    for t in tasks_list:
+        arr.append(InlineKeyboardButton(t.name, callback_data=dumps(dict(G='st_tsk', c_id=t.course_id, t_id=t.number))))
 
     return arr

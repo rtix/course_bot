@@ -1,7 +1,8 @@
+from Bot.config import DATABASE_PATH
 import sqlite3 as sql
 
 def create_course(owner_id,course_name):
-    con = sql.connect('./Database/DB_FOR_TBOT.db')
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -17,7 +18,7 @@ def create_course(owner_id,course_name):
     return c
 
 def create_user_course(id_user,id_course):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -26,7 +27,7 @@ def create_user_course(id_user,id_course):
     con.close()
 
 def get_course(course_id):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("""Select * from Course
                 where id=?""",[course_id])
@@ -84,7 +85,7 @@ def get_course(course_id):
     return d
 
 def get_course_participants(course_id):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur=con.cursor()
     cur.execute("""Select id_user from User_course
                 where id_course=?""",[course_id])
@@ -96,7 +97,7 @@ def get_course_participants(course_id):
     return c
 
 def create_task(course_id,task_name,task_descr,task_highest_mark,deadline):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur=con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -114,7 +115,7 @@ def create_task(course_id,task_name,task_descr,task_highest_mark,deadline):
     return c
 
 def get_task(course_id,task_id):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur=con.cursor()
     cur.execute("""Select* from Tasks
                 where course_id=? and task_id =?""",[course_id,task_id])
@@ -124,7 +125,7 @@ def get_task(course_id,task_id):
     return d
 
 def set_course(course_id,field,value):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur=con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -136,7 +137,7 @@ def set_course(course_id,field,value):
     return course_id
 
 def set_task(course_id,task_id,field,value):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur=con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -148,7 +149,7 @@ def set_task(course_id,task_id,field,value):
     return course_id
 
 def delete_course(course_id):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -159,7 +160,7 @@ def delete_course(course_id):
     return course_id
 
 def create_mark(course_id,task_id,user_id,mark,date):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -169,7 +170,7 @@ def create_mark(course_id,task_id,user_id,mark,date):
     return task_id
 
 def get_mark(course_id,task_id,user_id):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -184,7 +185,7 @@ def get_mark(course_id,task_id,user_id):
     return d
 
 def set_mark(course_id,task_id,user_id,field,value):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -196,7 +197,7 @@ def set_mark(course_id,task_id,user_id,field,value):
     return task_id
 
 def delete_mark(course_id,task_id,user_id):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -207,7 +208,7 @@ def delete_mark(course_id,task_id,user_id):
     return task_id
 
 def delete_task(course_id,task_id):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -218,7 +219,7 @@ def delete_task(course_id,task_id):
     return task_id
 
 def create_classwork(course_id,cw_name,cw_date):
-    con=sql.connect("./Database/DB_FOR_TBOT.db")
+    con=sql.connect(DATABASE_PATH)
     cur=con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -236,7 +237,7 @@ def create_classwork(course_id,cw_name,cw_date):
     return c
 
 def set_classwork(course_id,cw_id,field,value):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -247,7 +248,7 @@ def set_classwork(course_id,cw_id,field,value):
     con.close()
     
 def delete_classwork(course_id,cw_id):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -258,7 +259,7 @@ def delete_classwork(course_id,cw_id):
     return cw_id
 
 def get_classwork(course_id,cw_id):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -274,7 +275,7 @@ def get_classwork(course_id,cw_id):
         return None
 
 def create_attendance(course_id,cw_id,user_id,value):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -283,7 +284,7 @@ def create_attendance(course_id,cw_id,user_id,value):
     con.close()
     
 def get_attendance(course_id,cw_id,user_id):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -299,7 +300,7 @@ def get_attendance(course_id,cw_id,user_id):
         return {}
 
 def set_attendance(course_id,cw_id,user_id,field,value):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -310,7 +311,7 @@ def set_attendance(course_id,cw_id,user_id,field,value):
     con.close()
     
 def delete_attendance(course_id,cw_id,user_id):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -320,7 +321,7 @@ def delete_attendance(course_id,cw_id,user_id):
     con.close()
     
 def append_to_blacklist(course_id,user_id):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -329,7 +330,7 @@ def append_to_blacklist(course_id,user_id):
     con.close()
     
 def remove_from_blacklist(course_id,user_id):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -339,7 +340,7 @@ def remove_from_blacklist(course_id,user_id):
     con.close()
     
 def append_user_course(stud_id,course_id):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur=con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -349,7 +350,7 @@ def append_user_course(stud_id,course_id):
     return stud_id
 
 def remove_user_course(stud_id,course_id):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -360,7 +361,7 @@ def remove_user_course(stud_id,course_id):
     return stud_id
 
 def create_literature(course_id,name, description, file_id, url):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("""Insert into Literature(course_id,name,description,file_id,url)
                 values(?,?,?,?,?)""",[course_id,name,description,file_id,url])
@@ -372,7 +373,7 @@ def create_literature(course_id,name, description, file_id, url):
     return d
 
 def get_literature(course_id,lit_id):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -387,7 +388,7 @@ def get_literature(course_id,lit_id):
         con.close()
         
 def set_literature(course_id, lit_id,field,value):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("Pragma foreign_keys = ON")
     con.commit()
@@ -398,7 +399,7 @@ def set_literature(course_id, lit_id,field,value):
     con.close()
     
 def delete_literature(course_id, lit_id):
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("""Delete from Literature
                 where course_id=? and lit_id=?""",[course_id,lit_id])
@@ -407,7 +408,7 @@ def delete_literature(course_id, lit_id):
     return lit_id
 
 def fetch_all_courses():
-    con = sql.connect("./Database/DB_FOR_TBOT.db")
+    con = sql.connect(DATABASE_PATH)
     cur = con.cursor()
     cur.execute("""Select id from Course""")
     c=cur.fetchall()

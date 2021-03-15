@@ -35,7 +35,7 @@ def check_valid(mail):
     :param mail: email as str to check
     """
 
-    return bool(re.fullmatch(r'^[\w]\S*@[a-z]+\.[a-z]+$', mail, re.ASCII))
+    return bool(re.fullmatch(r'^[\w]\S*@[a-z]+\.[a-z]+$', mail, re.ASCII | re.IGNORECASE))
 
 
 class Mail:

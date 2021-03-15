@@ -1,11 +1,6 @@
 import operator
-import os
 
-from telebot import types
-
-
-# путь к сообщениям
-mespath = 'UI' + os.sep + 'messages' + os.sep
+from UI.misc import messages
 
 
 class Paging:
@@ -17,7 +12,7 @@ class Paging:
         """
 
         self.arr = data
-        self.last_page = ((len(data)-1) // inpage)
+        self.last_page = ((len(data) - 1) // inpage)
         self.inpage = inpage
 
         if sort_key:
@@ -37,11 +32,12 @@ class Paging:
         elif page > self.last_page:
             page = self.last_page
 
-        return [i for i in self.arr[page * self.inpage:(page + 1) * self.inpage]]
+        return [i for i in self.arr[(page * self.inpage):((page + 1) * self.inpage)]]
 
-    def msg(self, page):
+    def msg(self, page, lang):
         """
         :param page: int. Текущая страница.
+        :param lang: str. Язык сообщения.
         :return: str. Строка вида "Страница 'page' из 'self.last_page'".
         """
 
@@ -50,23 +46,4 @@ class Paging:
         elif page > self.last_page:
             page = self.last_page
 
-        return '\nСтраница {} из {}'.format(page + 1, self.last_page + 1)
-
-
-def create_markup(*buttons, width=3):
-    """
-    Создает разметку кнопок '*buttons' с шириной 'width'.
-
-    :param buttons: lists of InlineKeyboardMarkup. Списки из 'InlineKeyboardMarkup'.
-                    При разделении списка выведет кнопки на разных строках.
-                    Т.е. '[b1, b2]' будут на одной;
-                        '[b1], [b2]' будут на разных.
-    :param width: int. Кол-во кнопок на одной строке. По умолчанию 3.
-    :return: InlineKeyboardMarkup. Возвращает разметку кнопок.
-    """
-
-    markup = types.InlineKeyboardMarkup(row_width=width)
-    for button in buttons:
-        markup.add(*button)
-
-    return markup
+        return messages[lang]['common']['paging'].format(page + 1, self.last_page + 1)
