@@ -19,7 +19,7 @@ A Telegram bot for managing academic courses. A self-hosted solution for instruc
 
 ## Dependencies
 ```
-pyYandexTranslateAPI 4.*
+pyTelegramBotAPI 4.*
 ```
 
 ## Configuration
