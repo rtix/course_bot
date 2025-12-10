@@ -13,7 +13,7 @@ A Telegram bot for managing academic courses. A self-hosted solution for instruc
 
 1. Register your telegram bot via `@BotFather`
 2. Fill your `settings.cfg`
-3. Install `pyYandexTranslateAPI`
+3. Install `pyTelegramBotAPI`
 4. `python start.py`
 5. `/start` in your telegram bot
 
